@@ -25,7 +25,7 @@ aud_ops = {
     "logtostderr": False,
 }
 vid_ops = {
-    "format": "best[height<=1080]",
+    "format": "best[height>=480]",
     "addmetadata": True,
     "key": "FFmpegMetadata",
     "prefer_ffmpeg": True,
