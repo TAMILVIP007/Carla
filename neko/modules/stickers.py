@@ -78,7 +78,7 @@ async def kang(event):
         file_reference = sended.media.document.file_reference
         os.remove("sticker.webp")
         await sended.delete()
-    short_name = f"nk{event.sender_id}_by_MissRevy_Bot"
+    short_name = f"nk{event.sender_id}_by_Missrevy_Bot"
     user_id = OWNER_ID
     if event.sender.first_name:
         title = f"{event.sender.first_name}'s Kang pack"
@@ -294,7 +294,7 @@ async def pck_kang__(e):
             CreateStickerSetRequest(
                 user_id=e.sender_id,
                 title=pname,
-                short_name=f"{pm}{e.sender_id}_{pack}_by_MissRevy_Bot",
+                short_name=f"{pm}{e.sender_id}_{pack}_by_Missrevy_Bot",
                 stickers=stk,
             )
         )
@@ -304,7 +304,7 @@ async def pck_kang__(e):
             CreateStickerSetRequest(
                 user_id=e.sender_id,
                 title=pname + f"Vol {pack}",
-                short_name=f"{pm}{e.sender_id}_{pack}_by_MissNeko_Bot",
+                short_name=f"{pm}{e.sender_id}_{pack}_by_Missrevy_Bot",
                 stickers=stk,
             )
         )
