@@ -41,7 +41,7 @@ def get_emoji(v):
     return None
 
 
-@Cbot(pattern="^/kang(@MissNeko_Bot)? ?(.*)")
+@Cbot(pattern="^/kang(@MissRevy_Bot)? ?(.*)")
 async def kang(event):
     if not event.reply_to:
         return await event.reply("Please reply to a sticker, or image to kang it!")
@@ -78,7 +78,7 @@ async def kang(event):
         file_reference = sended.media.document.file_reference
         os.remove("sticker.webp")
         await sended.delete()
-    short_name = f"nk{event.sender_id}_by_MissNeko_Bot"
+    short_name = f"nk{event.sender_id}_by_MissRevy_Bot"
     user_id = OWNER_ID
     if event.sender.first_name:
         title = f"{event.sender.first_name}'s Kang pack"
@@ -159,7 +159,7 @@ async def kang(event):
     )
 
 
-@Cbot(pattern="^/unkang(@MissNeko_Bot)?$")
+@Cbot(pattern="^/unkang(@MissRevy_Bot)?$")
 async def unkang__own_sticker(e):
     if not e.reply_to_msg_id:
         return await e.reply("Reply to a sticker from your stickerset to Unkang It!")
@@ -205,7 +205,7 @@ async def unkang__own_sticker(e):
         )
 
 
-@Cbot(pattern="^/mypac(k|ks)(@MissNeko_Bot)? ?(.*)")
+@Cbot(pattern="^/mypac(k|ks)(@MissRevy_Bot)? ?(.*)")
 async def my_pack(e):
     if str((sticker_sets.find({"id": e.sender_id})).distinct("sticker_id")) == "[]":
         return await e.reply("You have not yet created any sticker packs!")
@@ -294,7 +294,7 @@ async def pck_kang__(e):
             CreateStickerSetRequest(
                 user_id=e.sender_id,
                 title=pname,
-                short_name=f"{pm}{e.sender_id}_{pack}_by_MissNeko_Bot",
+                short_name=f"{pm}{e.sender_id}_{pack}_by_MissRevy_Bot",
                 stickers=stk,
             )
         )
