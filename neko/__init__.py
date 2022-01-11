@@ -36,6 +36,7 @@ STRING_SESSION = None
 MONGO_DB_URI = os.environ.get(
     "MONGO_DB_URI",
 )
+THUMB = os.getenv("THUMB")
 BOT_ID = 1839462992
 ubot = None
 if STRING_SESSION:
