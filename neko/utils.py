@@ -5,7 +5,7 @@ from pathlib import Path
 
 from telethon import events
 
-from . import OWNER_ID, tbot, THUMB
+from . import OWNER_ID, THUMB, tbot
 
 
 def Cbot(**args):
