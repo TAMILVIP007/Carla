@@ -5,7 +5,7 @@ from pathlib import Path
 
 from telethon import events
 
-from . import OWNER_ID, tbot
+from . import OWNER_ID, tbot, THUMB
 
 
 def Cbot(**args):
@@ -79,6 +79,7 @@ def load_module(shortname):
         mod.Cbot = Cbot
         mod.tbot = tbot
         mod.logger = logging.getLogger(shortname)
+        mod.THUMB = THUMB
         spec.loader.exec_module(mod)
         sys.modules["neko.modules." + shortname] = mod
         print("Successfully imported " + shortname)
