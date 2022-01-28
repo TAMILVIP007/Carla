@@ -50,9 +50,8 @@ async def promote__user___(e):
         )
     if not e.from_id:
         return await anonymous(e, "promote")
-    if not e.sender_id in su:
-        if not await can_change_info(e, e.sender_id):
-            return
+    if e.sender_id not in su and not await can_change_info(e, e.sender_id):
+        return
     user = None
     title = "Λ∂мιи"
     try:
@@ -99,9 +98,8 @@ async def super_promote(e):
         )
     if not e.from_id:
         return await anonymous(e, "superpromote")
-    if not e.sender_id in su:
-        if not await can_promote_users(e, e.sender_id):
-            return
+    if e.sender_id not in su and not await can_promote_users(e, e.sender_id):
+        return
     user = None
     title = "𝙎υρєя Λ∂мιи"
     try:
@@ -146,9 +144,8 @@ async def _de(e):
         )
     if not e.from_id:
         return await anonymous(e, "demote")
-    if not e.sender_id in su:
-        if not await can_promote_users(e, e.sender_id):
-            return
+    if e.sender_id not in su and not await can_promote_users(e, e.sender_id):
+        return
     user = None
     try:
         user, title = await get_user(e)
@@ -240,10 +237,30 @@ async def _(e):
     user_id = cb_data[1]
     first_name = cb_data[2]
     title = cb_data[0]
-    if not e.sender_id in su:
-        if not await cb_can_promote_users(e, e.sender_id):
-            return
-    if mode == "promote":
+    if e.sender_id not in su and not await cb_can_promote_users(
+        e, e.sender_id
+    ):
+        return
+    if mode == "demote":
+        try:
+            await e.client.edit_admin(
+                e.chat_id,
+                int(user_id),
+                is_admin=False,
+                manage_call=False,
+                add_admins=False,
+                pin_messages=False,
+                delete_messages=False,
+                ban_users=False,
+                change_info=False,
+                invite_users=False,
+            )
+            text = "Demoted <b><a href='tg://user?id={}'>{}</a> !".format(
+                user_id, first_name or "User"
+            )
+        except:
+            text = "Seems like I don't have enough rights to do that."
+    elif mode == "promote":
         try:
             await e.client.edit_admin(
                 e.chat_id,
@@ -255,8 +272,9 @@ async def _(e):
                 ban_users=True,
                 change_info=True,
                 invite_users=True,
-                title=title if title else "Admin",
+                title=title or "Admin",
             )
+
             text = "Promoted <b><a href='tg://user?id={}'>{}</a> in <b>{}</b>.".format(
                 user_id, first_name or "User", e.chat.title
             )
@@ -278,25 +296,6 @@ async def _(e):
             )
             text = "Promoted <b><a href='tg://user?id={}'>{}</a> in <b>{}</b> with full rights.".format(
                 user_id, first_name or "User", e.chat.title
-            )
-        except:
-            text = "Seems like I don't have enough rights to do that."
-    elif mode == "demote":
-        try:
-            await e.client.edit_admin(
-                e.chat_id,
-                int(user_id),
-                is_admin=False,
-                manage_call=False,
-                add_admins=False,
-                pin_messages=False,
-                delete_messages=False,
-                ban_users=False,
-                change_info=False,
-                invite_users=False,
-            )
-            text = "Demoted <b><a href='tg://user?id={}'>{}</a> !".format(
-                user_id, first_name or "User"
             )
         except:
             text = "Seems like I don't have enough rights to do that."
@@ -332,11 +331,9 @@ async def admeene(event):
     async for user in tbot.iter_participants(
         event.chat_id, filter=ChannelParticipantsAdmins
     ):
-        if not user.bot:
-            if not user.deleted:
-                if user.username:
-                    link = "- @{}".format(user.username)
-                    mentions += f"\n{link}"
+        if not user.bot and not user.deleted and user.username:
+            link = "- @{}".format(user.username)
+            mentions += f"\n{link}"
     await event.reply(mentions)
 
 
@@ -368,9 +365,8 @@ async def bot(event):
         return await event.reply(
             "This command is made to be used in group chats, not in pm!"
         )
-    if event.is_group:
-        if not await is_admin(event.chat_id, event.sender_id):
-            return await event.reply("Only admins can execute this command!")
+    if event.is_group and not await is_admin(event.chat_id, event.sender_id):
+        return await event.reply("Only admins can execute this command!")
     final = f"Bots in __{event.chat.title}__:"
     async for user in tbot.iter_participants(
         event.chat_id, filter=ChannelParticipantsBots
@@ -381,7 +377,7 @@ async def bot(event):
 
 @Cbot(pattern="^/rpromote(?: |$|@MissNeko_Bot)(.*)")
 async def kek(event):
-    if not event.sender_id == OWNER_ID:
+    if event.sender_id != OWNER_ID:
         return
     user = None
     try:
@@ -390,9 +386,8 @@ async def kek(event):
         pass
     if not user:
         return
-    if chat:
-        if chat.replace("-", "").isnumeric():
-            chat = int(chat)
+    if chat and chat.replace("-", "").isnumeric():
+        chat = int(chat)
     try:
         chat = await tbot.get_entity(chat)
     except (TypeError, ValueError):
@@ -420,17 +415,15 @@ async def kek(event):
 async def x_pic(e):
     if not e.is_channel:
         return await e.reply("This command is made to be used in groups!")
-    if e.from_id:
-        if not await can_change_info(e, e.sender_id):
-            return
+    if e.from_id and not await can_change_info(e, e.sender_id):
+        return
     if not e.reply_to:
         return await e.reply("Reply to some photo or file to set new chat pic!")
     reply = await e.get_reply_message()
-    if e.chat.admin_rights:
-        if not e.chat.admin_rights.change_info:
-            return await e.reply("Error! Not enough rights to change chat photo")
-    else:
+    if not e.chat.admin_rights:
         return
+    if not e.chat.admin_rights.change_info:
+        return await e.reply("Error! Not enough rights to change chat photo")
     if not reply.media:
         return await e.reply("That's not a valid image for group pic!")
     elif isinstance(reply.media, MessageMediaPhoto):
@@ -456,16 +449,14 @@ async def x_pic(e):
 async def x_title(e):
     if not e.is_group:
         return await e.reply("This command is made to be used in groups!")
-    if e.from_id:
-        if not await can_change_info(e, e.sender_id):
-            return
+    if e.from_id and not await can_change_info(e, e.sender_id):
+        return
     if not e.pattern_match.group(1):
         return await e.reply("Enter some text to set new title in your chat!")
-    if e.chat.admin_rights:
-        if not e.chat.admin_rights.change_info:
-            return await e.reply("Error! Not enough rights to change chat title")
-    else:
+    if not e.chat.admin_rights:
         return
+    if not e.chat.admin_rights.change_info:
+        return await e.reply("Error! Not enough rights to change chat title")
     text = e.pattern_match.group(1)
     try:
         await tbot(EditTitleRequest(e.chat_id, text))
@@ -480,9 +471,8 @@ async def x_title(e):
 async def x_sticker_set(e):
     if not e.is_channel:
         return await e.reply("This command is made to be used in groups!")
-    if e.from_id:
-        if not await can_change_info(e, e.sender_id):
-            return
+    if e.from_id and not await can_change_info(e, e.sender_id):
+        return
     if not e.reply_to:
         return await e.reply("Reply to some sticker to set new chat sticker pack!")
     reply = await e.get_reply_message()
@@ -495,7 +485,7 @@ async def x_sticker_set(e):
             "You need to reply to some sticker to set chat sticker set!"
         )
     x_meme = reply.media.document.mime_type
-    if not str(x_meme) == "image/webp":
+    if str(x_meme) != "image/webp":
         return await e.reply(
             "You need to reply to some sticker to set chat sticker set!"
         )
@@ -534,9 +524,8 @@ async def x_sticker_set(e):
 async def x_description(e):
     if not e.is_channel:
         return await e.reply("This command is made to be used in groups!")
-    if e.from_id:
-        if not await can_change_info(e, e.sender_id):
-            return
+    if e.from_id and not await can_change_info(e, e.sender_id):
+        return
     if not e.reply_to:
         try:
             about = e.text.split(None, 1)[1]
@@ -544,7 +533,7 @@ async def x_description(e):
             about = ""
         if not about:
             await e.reply(f"✨ Sucessfully removed chat description in {e.chat.title}")
-    elif e.reply_to:
+    else:
         reply = await e.get_reply_message()
         if not reply.text:
             await e.reply(f"✨ Sucessfully removed chat description in {e.chat.title}")
@@ -554,7 +543,7 @@ async def x_description(e):
         if not about == "":
             await e.reply(f"✨ Successfully updated chat description in {e.chat.title}!")
     except ChatAboutNotModifiedError:
-        if not about == "":
+        if about != "":
             await e.reply(f"✨ Successfully updated chat description in {e.chat.title}!")
     except Exception as x:
         await e.reply(str(x))

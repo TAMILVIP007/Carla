@@ -30,30 +30,26 @@ def del_fed(fed_id):
 
 
 def transfer_fed(owner_id: int, user_id: int):
-    _fed = feds.find_one({"owner_id": owner_id})
-    if _fed:
+    if _fed := feds.find_one({"owner_id": owner_id}):
         feds.update_one(
             {"fed_id": _fed["fed_id"]}, {"$set": {"owner_id": user_id}}, upsert=True
         )
 
 
 def rename_fed(fed_id, fname):
-    _fed = feds.find_one({"fed_id": fed_id})
-    if _fed:
+    if _fed := feds.find_one({"fed_id": fed_id}):
         feds.update_one({"fed_id": fed_id}, {"$set": {"fedname": fname}}, upsert=True)
 
 
 def chat_join_fed(fed_id, chat_id: int):
-    _fed = feds.find_one({"fed_id": fed_id})
-    if _fed:
+    if _fed := feds.find_one({"fed_id": fed_id}):
         chats = _fed["chats"]
         chats.append(chat_id)
         feds.update_one({"fed_id": fed_id}, {"$set": {"chats": chats}}, upsert=True)
 
 
 def user_demote_fed(fed_id, user_id: int):
-    _fed = feds.find_one({"fed_id": fed_id})
-    if _fed:
+    if _fed := feds.find_one({"fed_id": fed_id}):
         fedadmins = _fed["fedadmins"]
         fedadmins.remove(user_id)
         feds.update_one(
@@ -62,8 +58,7 @@ def user_demote_fed(fed_id, user_id: int):
 
 
 def user_join_fed(fed_id, user_id: int):
-    _fed = feds.find_one({"fed_id": fed_id})
-    if _fed:
+    if _fed := feds.find_one({"fed_id": fed_id}):
         fedadmins = _fed["fedadmins"]
         fedadmins.append(user_id)
         feds.update_one(
@@ -72,29 +67,26 @@ def user_join_fed(fed_id, user_id: int):
 
 
 def chat_leave_fed(fed_id, chat_id):
-    _fed = feds.find_one({"fed_id": fed_id})
-    if _fed:
+    if _fed := feds.find_one({"fed_id": fed_id}):
         chats = _fed["chats"]
         chats.remove(chat_id)
         feds.update_one({"fed_id": fed_id}, {"$set": {"chats": chats}}, upsert=True)
 
 
 def fban_user(fed_id, user_id: str, firstname, lastname, reason, time: str):
-    _fban = fbans.find_one({"fed_id": fed_id})
-    if _fban:
-        f_bans = _fban["fbans"]
-    else:
-        f_bans = {}
+    f_bans = (
+        _fban["fbans"] if (_fban := fbans.find_one({"fed_id": fed_id})) else {}
+    )
+
     f_bans[str(user_id)] = [firstname, lastname, reason, time]
     fbans.update_one({"fed_id": fed_id}, {"$set": {"fbans": f_bans}}, upsert=True)
 
 
 def unfban_user(fed_id, user_id):
-    _fban = fbans.find_one({"fed_id": fed_id})
-    if _fban:
-        f_bans = _fban["fbans"]
-    else:
-        f_bans = {}
+    f_bans = (
+        _fban["fbans"] if (_fban := fbans.find_one({"fed_id": fed_id})) else {}
+    )
+
     if f_bans[str(user_id)]:
         del f_bans[str(user_id)]
     fbans.update_one({"fed_id": fed_id}, {"$set": {"fbans": f_bans}}, upsert=True)
@@ -105,29 +97,23 @@ def super_fban(user_id):
 
 
 def get_user_owner_fed_full(owner_id):
-    _all_feds = feds.find_one({"owner_id": owner_id})
-    if _all_feds:
+    if _all_feds := feds.find_one({"owner_id": owner_id}):
         return _all_feds["fed_id"], _all_feds["fedname"]
     return None
 
 
 def search_fed_by_id(fed_id):
-    _x_fed = feds.find_one({"fed_id": fed_id})
-    if _x_fed:
-        return _x_fed
-    return None
+    return _x_fed if (_x_fed := feds.find_one({"fed_id": fed_id})) else None
 
 
 def get_len_fbans(fed_id):
-    _x_fbans = fbans.find_one({"fed_id": fed_id})
-    if _x_fbans:
+    if _x_fbans := fbans.find_one({"fed_id": fed_id}):
         return len(_x_fbans.get("fbans"))
     return 0
 
 
 def get_all_fbans(fed_id):
-    _x_fbans = fbans.find_one({"fed_id": fed_id})
-    if _x_fbans:
+    if _x_fbans := fbans.find_one({"fed_id": fed_id}):
         return _x_fbans.get("fbans")
     return None
 
@@ -144,31 +130,23 @@ def get_chat_fed(chat_id):
 
 
 def get_fban_user(fed_id, user_id: str):
-    _x_data = fbans.find_one({"fed_id": fed_id})
-    if _x_data:
-        _xx_data = _x_data.get("fbans")
-        if _xx_data:
-            __xxx_data = _xx_data.get(str(user_id))
-            if __xxx_data:
+    if _x_data := fbans.find_one({"fed_id": fed_id}):
+        if _xx_data := _x_data.get("fbans"):
+            if __xxx_data := _xx_data.get(str(user_id)):
                 return True, __xxx_data[2], __xxx_data[3]
     return False, None, None
 
 
 def search_user_in_fed(fed_id, user_id: int):
-    _x = feds.find_one({"fed_id": fed_id})
-    if _x:
+    if _x := feds.find_one({"fed_id": fed_id}):
         _admins = _x.get("fedadmins")
-        if _admins and len(_admins) > 0:
-            if user_id in _admins:
-                return True
+        if _admins and len(_admins) > 0 and user_id in _admins:
+            return True
     return False
 
 
 def user_feds_report(user_id: int):
-    _x = feds.find_one({"owner_id": user_id})
-    if _x:
-        return _x["report"]
-    return True
+    return _x["report"] if (_x := feds.find_one({"owner_id": user_id})) else True
 
 
 def set_feds_setting(user_id: int, mode):
@@ -184,10 +162,7 @@ def get_all_fed_admins(fed_id):
 
 
 def get_fed_log(fed_id):
-    _fed = feds.find_one({"fed_id": fed_id})
-    if _fed:
-        return _fed["flog"]
-    return False
+    return _fed["flog"] if (_fed := feds.find_one({"fed_id": fed_id})) else False
 
 
 def get_all_fed_chats(fed_id):
@@ -196,16 +171,14 @@ def get_all_fed_chats(fed_id):
 
 
 def sub_fed(fed_id: str, my_fed: str):
-    x_mysubs = fsubs.find_one({"fed_id": my_fed})
-    if x_mysubs:
+    if x_mysubs := fsubs.find_one({"fed_id": my_fed}):
         my_subs = x_mysubs["my_subs"]
     else:
         my_subs = []
     my_subs.append(fed_id)
     my_subs = list(set(my_subs))
     fsubs.update_one({"fed_id": my_fed}, {"$set": {"my_subs": my_subs}}, upsert=True)
-    x_fedsubs = fsubs.find_one({"fed_id": fed_id})
-    if x_fedsubs:
+    if x_fedsubs := fsubs.find_one({"fed_id": fed_id}):
         fed_subs = x_fedsubs["fed_subs"]
     else:
         fed_subs = []
@@ -215,16 +188,14 @@ def sub_fed(fed_id: str, my_fed: str):
 
 
 def unsub_fed(fed_id: str, my_fed: str):
-    x_mysubs = fsubs.find_one({"fed_id": my_fed})
-    if x_mysubs:
+    if x_mysubs := fsubs.find_one({"fed_id": my_fed}):
         my_subs = x_mysubs["my_subs"]
     else:
         my_subs = []
     if fed_id in my_subs:
         my_subs.remove(fed_id)
     fsubs.update_one({"fed_id": my_fed}, {"$set": {"my_subs": my_subs}}, upsert=True)
-    x_fedsubs = fsubs.find_one({"fed_id": fed_id})
-    if x_fedsubs:
+    if x_fedsubs := fsubs.find_one({"fed_id": fed_id}):
         fed_subs = x_fedsubs["fed_subs"]
     else:
         fed_subs = []
@@ -234,15 +205,13 @@ def unsub_fed(fed_id: str, my_fed: str):
 
 
 def get_my_subs(fed_id):
-    x_mysubs = fsubs.find_one({"fed_id": fed_id})
-    if x_mysubs:
+    if x_mysubs := fsubs.find_one({"fed_id": fed_id}):
         return x_mysubs.get("my_subs") or []
     return []
 
 
 def get_fed_subs(fed_id):
-    x_fedsubs = fsubs.find_one({"fed_id": fed_id})
-    if x_fedsubs:
+    if x_fedsubs := fsubs.find_one({"fed_id": fed_id}):
         return x_fedsubs.get("fed_subs") or []
     return []
 
@@ -252,10 +221,7 @@ def add_fname(user_id, fname):
 
 
 def get_fname(user_id):
-    x = fadmins.find_one({"user_id": user_id})
-    if x:
-        return x["fname"]
-    return None
+    return x["fname"] if (x := fadmins.find_one({"user_id": user_id})) else None
 
 
 def set_fed_log(fed_id: str, chat_id=None):
@@ -263,13 +229,9 @@ def set_fed_log(fed_id: str, chat_id=None):
 
 
 def get_all_fed_admin_feds(user_id):
-    admin = []
     fed = {}
-    for x in feds.find():
-        if user_id in x.get("fedadmins"):
-            admin.append(x.get("fed_id"))
-    owner = feds.find_one({"owner_id": user_id})
-    if owner:
+    admin = [x.get("fed_id") for x in feds.find() if user_id in x.get("fedadmins")]
+    if owner := feds.find_one({"owner_id": user_id}):
         fed["owner"] = owner["fed_id"]
     if admin:
         fed["admin"] = admin

@@ -20,7 +20,7 @@ db = {}
 async def play_video(e):
     try:
         global p
-        if not e.sender_id in p:
+        if e.sender_id not in p:
             return
         try:
             q = e.text.split(None, 1)[1]

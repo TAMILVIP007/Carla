@@ -22,16 +22,15 @@ To change this setting, try this command again, with one of the following args: 
 async def _(event):
     if event.is_private:
         return  # connect
-    if event.from_id:
-        if not await can_change_info(event, event.sender_id):
-            return
+    if event.from_id and not await can_change_info(event, event.sender_id):
+        return
     args = event.pattern_match.group(1)
     chat = event.chat_id
     if args:
-        if args == "on" or args == "yes":
+        if args in ["on", "yes"]:
             await event.reply("Users will now be able to report messages.")
             db.set_chat_setting(chat, True)
-        elif args == "off" or args == "no":
+        elif args in ["off", "no"]:
             await event.reply(
                 "Users will no longer be able to report via @admin or /report."
             )
@@ -39,11 +38,10 @@ async def _(event):
         else:
             await event.reply("Your input was not recognised as one of: yes/no/on/off")
             return
+    elif db.chat_should_report(chat):
+        await event.reply(Ron)
     else:
-        if db.chat_should_report(chat):
-            await event.reply(Ron)
-        else:
-            await event.reply(Roff)
+        await event.reply(Roff)
 
 
 @Cbot(pattern="^/report ?(.*)")

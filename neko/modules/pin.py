@@ -18,7 +18,7 @@ async def _(event):
         async for msg in tbot.iter_messages(
             event.chat_id, ids=InputMessagePinned(), limit=1
         ):
-            if msg == None:
+            if msg is None:
                 return await x.edit("There are no pinned messages in this chat.")
             id = msg.id
     except ChatAdminRequiredError:
@@ -52,9 +52,10 @@ async def _(event):
         return
     if event.is_private:
         return  # connect
-    if not event.sender_id == OWNER_ID or event.sender_id in ELITES:
-        if not await can_pin_messages(event, event.sender_id):
-            return
+    if (
+        event.sender_id != OWNER_ID or event.sender_id in ELITES
+    ) and not await can_pin_messages(event, event.sender_id):
+        return
     if not event.reply_to_msg_id:
         return await event.reply("You need to reply to a message to pin it!")
     reply_msg = await event.get_reply_message()
@@ -63,9 +64,7 @@ async def _(event):
         return await event.reply(
             f"'{options}' was not recognised as a valid pin option. Please use one of: loud/violent/notify/silent/quiet"
         )
-    is_silent = True
-    if options == "silent" or options == "quiet":
-        is_silent = False
+    is_silent = options not in ["silent", "quiet"]
     chat = (str(event.chat_id)).replace("-100", "")
     text = f"I have pinned [this message](t.me/c/{chat}/{reply_msg.id})."
     if options == "notify":
@@ -76,7 +75,7 @@ async def _(event):
             await event.respond(text, reply_to=reply_msg.id)
     except:
         await event.reply(
-            f"Looks like I dont have permission to pin messages. Could you please promote me?"
+            'Looks like I dont have permission to pin messages. Could you please promote me?'
         )
 
 
@@ -100,7 +99,7 @@ async def _(event):
                 "Failed to get the last pinned messages, Reply to the message!"
             )
         id = msg.id
-        text = f"I have unpinned the last pinned message."
+        text = 'I have unpinned the last pinned message.'
     else:
         reply = await event.get_reply_message()
         id = reply.id
@@ -111,7 +110,7 @@ async def _(event):
         await event.reply(text)
     except:
         await event.reply(
-            f"Looks like I dont have permission to pin messages. Could you please promote me?"
+            'Looks like I dont have permission to pin messages. Could you please promote me?'
         )
 
 
@@ -120,9 +119,10 @@ async def _(event):
     args = event.pattern_match.group(1)
     if event.is_private:
         return  # connect
-    if not event.sender_id == OWNER_ID or event.sender_id in ELITES:
-        if not await can_pin_messages(event, event.sender_id):
-            return
+    if (
+        event.sender_id != OWNER_ID or event.sender_id in ELITES
+    ) and not await can_pin_messages(event, event.sender_id):
+        return
     if not args and not event.reply_to_msg_id:
         return await event.reply("You need to give some message content to pin!")
     is_silent = True
@@ -130,9 +130,9 @@ async def _(event):
         reply_msg = await event.get_reply_message()
         lolz = await event.respond(reply_msg)
         msg_id = lolz.id
-        if args == "silent" or args == "quiet":
+        if args in ["silent", "quiet"]:
             is_silent = False
-    elif not event.reply_to_msg_id and args:
+    else:
         txt = (
             event.text[len("?permapin ") :]
             or event.text[len("!permapin ") :]
@@ -156,9 +156,7 @@ async def upinall(event):
         return  # connect
     if event.sender_id == OWNER_ID:
         pass
-    elif await is_owner(event, event.sender_id):
-        pass
-    else:
+    elif not await is_owner(event, event.sender_id):
         return
     text = "Are you sure you want to unpin all messages?"
     buttons = [Button.inline("Yes", data="upin"), Button.inline("No", data="cpin")]

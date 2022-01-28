@@ -10,10 +10,9 @@ def add_sudo(user_id: int, name: str):
             sudos = sudos["sudo"]
         except:
             sudos = {}
-        sudos[user_id] = name
     else:
         sudos = {}
-        sudos[user_id] = name
+    sudos[user_id] = name
     sudo_m.update_one({"type": "staffs"}, {"$set": {"sudo": sudos}}, upsert=True)
 
 
@@ -24,10 +23,9 @@ def add_dev(user_id: int, name: str):
             devs = devs["dev"]
         except:
             devs = {}
-        devs[user_id] = name
     else:
         devs = {}
-        devs[user_id] = name
+    devs[user_id] = name
     sudo_m.update_one({"type": "staffs"}, {"$set": {"dev": devs}}, upsert=True)
 
 
@@ -56,8 +54,7 @@ def rem_dev(user_id: int):
 
 
 def get_sudos():
-    sudo = sudo_m.find_one({"type": "staffs"})
-    if sudo:
+    if sudo := sudo_m.find_one({"type": "staffs"}):
         try:
             return sudo["sudo"]
         except:
@@ -66,8 +63,7 @@ def get_sudos():
 
 
 def get_devs():
-    dev = sudo_m.find_one({"type": "staffs"})
-    if dev:
+    if dev := sudo_m.find_one({"type": "staffs"}):
         try:
             return dev["dev"]
         except:

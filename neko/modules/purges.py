@@ -27,22 +27,16 @@ async def purge(event):
     ):
         return
     lt = event.pattern_match.group(1)
-    if lt:
-        if not lt.isdigit():
-            lt = None
-    if lt:
-        limit = lt
-    else:
-        limit = 1000
-    if event.is_group:
-        if not await can_del_msg(event, event.sender_id):
-            return
+    if lt and not lt.isdigit():
+        lt = None
+    limit = lt or 1000
+    if event.is_group and not await can_del_msg(event, event.sender_id):
+        return
     if not event.reply_to_msg_id:
         return await event.reply("Reply to a message to show me where to purge from.")
-    messages = []
     message_id = event.reply_to_msg_id
     delete_to = event.message.id
-    messages.append(event.reply_to_msg_id)
+    messages = [event.reply_to_msg_id]
     for msg_id in range(message_id, delete_to + 1):
         messages.append(msg_id)
         if len(messages) == limit:
@@ -60,9 +54,8 @@ async def purge(event):
 
 @Cbot(pattern="^/purgefrom$")
 async def purge_from_(event):
-    if event.is_group:
-        if not await can_del_msg(event, event.sender_id):
-            return
+    if event.is_group and not await can_del_msg(event, event.sender_id):
+        return
     if not event.reply_to_msg_id:
         return await event.reply("Reply to a message to let me know what to delete.")
     msg_id = event.reply_to_msg_id
@@ -75,24 +68,19 @@ async def purge_from_(event):
 
 @Cbot(pattern="^/purgeto$")
 async def purge_to_(event):
-    if event.is_group:
-        if not await can_del_msg(event, event.sender_id):
-            return
+    if event.is_group and not await can_del_msg(event, event.sender_id):
+        return
     if not event.reply_to_msg_id:
         return await event.reply("Reply to a message to let me know what to delete.")
     purge = purgex.find_one({"id": event.chat_id})
-    if purge == None:
-        msg_id = None
-    else:
-        msg_id = purge.get("msg_id")
-    if msg_id == None:
+    msg_id = None if purge is None else purge.get("msg_id")
+    if msg_id is None:
         return await event.reply(
             "You can only use this command after having used the /purgefrom command."
         )
-    messages = []
     limit = 1000
     delete_to = event.reply_to_msg_id
-    messages.append(event.reply_to_msg_id)
+    messages = [event.reply_to_msg_id]
     for id in range(msg_id, delete_to + 1):
         messages.append(id)
         if len(messages) == limit:
@@ -117,9 +105,8 @@ async def deve(event):
     ):
         return
     if event.from_id:
-        if event.is_group:
-            if not await can_del_msg(event, event.sender_id):
-                return
+        if event.is_group and not await can_del_msg(event, event.sender_id):
+            return
         if not event.reply_to:
             return await event.reply(
                 "Reply to a message to let me know what to delete."
@@ -134,22 +121,16 @@ async def deve(event):
 @Cbot(pattern="^/spurge(?: |$|@MissNeko_Bot)(.*)")
 async def b(event):
     lt = event.pattern_match.group(1)
-    if lt:
-        if not lt.isdigit():
-            lt = None
-    if lt:
-        limit = lt
-    else:
-        limit = 1000
-    if event.is_group:
-        if not await can_del_msg(event, event.sender_id):
-            return
+    if lt and not lt.isdigit():
+        lt = None
+    limit = lt or 1000
+    if event.is_group and not await can_del_msg(event, event.sender_id):
+        return
     if not event.reply_to_msg_id:
         return await event.reply("Reply to a message to show me where to purge from.")
-    messages = []
     message_id = event.reply_to_msg_id
     delete_to = event.message.id
-    messages.append(event.reply_to_msg_id)
+    messages = [event.reply_to_msg_id]
     for msg_id in range(message_id, delete_to + 1):
         messages.append(msg_id)
         if len(messages) == limit:
@@ -183,9 +164,7 @@ async def kek(event):
 
 @Cinline(pattern="d_all")
 async def ki(event):
-    if event.sender_id == OWNER_ID:
-        pass
-    else:
+    if event.sender_id != OWNER_ID:
         perm = await tbot.get_permissions(event.chat_id, event.sender_id)
         if not perm.is_admin:
             return await event.answer("You need to be an admin to do this.")
@@ -232,9 +211,7 @@ async def ki(event):
             title="delall_helper",
         )
     except Exception as e:
-        if await can_del_msg(event, "RoseLoverX"):
-            pass
-        else:
+        if not await can_del_msg(event, "RoseLoverX"):
             return await event.edit(str(e))
     msg_id = event.id
     messages = []

@@ -17,9 +17,8 @@ async def pr(event):
         )
     if not event.from_id:
         return await a_rules(event, "privaterules")
-    if event.is_group:
-        if not await can_change_info(event, event.sender_id):
-            return
+    if event.is_group and not await can_change_info(event, event.sender_id):
+        return
     args = event.pattern_match.group(1)
     rules = db.get_rules(event.chat_id)
     if not rules:
@@ -27,8 +26,7 @@ async def pr(event):
             "You haven't set any rules yet; how about you do that first?"
         )
     if not args:
-        mode = db.get_private_rules(event.chat_id)
-        if mode:
+        if mode := db.get_private_rules(event.chat_id):
             await event.reply("Use of /rules will send the rules to the user's PM.")
         else:
             await event.reply(
@@ -61,16 +59,13 @@ async def set_r(event):
         )
     if not event.from_id:
         return await a_rules(event, "setrules")
-    if event.is_group and event.from_id:
-        if not await can_change_info(event, event.sender_id):
-            return
+    if event.is_group and not await can_change_info(event, event.sender_id):
+        return
     if not event.reply_to and not event.pattern_match.group(1):
         return await event.reply("You need to give me rules to set!")
     elif event.reply_to:
-        r_text = ""
         r_msg = await event.get_reply_message()
-        if r_msg.text:
-            r_text = r_msg.text
+        r_text = r_msg.text or ""
         if r_msg.reply_markup:
             buttons = get_reply_msg_btns_text(r_msg)
             r_text = r_text + str(buttons)
@@ -97,9 +92,8 @@ async def reset_rules(e):
         )
     if not e.from_id:
         return await a_rules(e, "resetrules")
-    if e.is_group:
-        if not await can_change_info(e, e.sender_id):
-            return
+    if e.is_group and not await can_change_info(e, e.sender_id):
+        return
     await e.reply(f"Rules for {e.chat.title} were successfully cleared!")
     db.del_rules(e.chat_id)
 
@@ -127,7 +121,7 @@ async def set_rules_button(e):
     elif len(rg) > 100:
         r_over = "Your new rules button name is too long; please make it shorter (under 100 characters)."
         await e.reply(r_over)
-    elif rg:
+    else:
         r_g = e.text.split(None, 1)[1]
         db.set_rules_button(e.chat_id, r_g)
         await e.reply("Updated the rules button name!")
@@ -141,9 +135,8 @@ async def p(e):
         )
     if not e.from_id:
         return await a_rules(e, "resetrulesbutton")
-    if e.is_group:
-        if not await can_change_info(e, e.sender_id):
-            return
+    if e.is_group and not await can_change_info(e, e.sender_id):
+        return
     await e.reply("Reset the rules button name to default")
     db.set_rules_button(e.chat_id, "Rules")
 
@@ -167,7 +160,7 @@ async def rules(e):
             button_name, "t.me/MissNeko_Bot?start=_rules_{}".format(e.chat_id)
         )
         await e.reply("Click on the button to see the chat rules!", buttons=x)
-    elif not pr:
+    else:
         x_rules, buttons = button_parser(rules)
         await e.reply(f"The Rules for {e.chat.title} are:\n" + x_rules, buttons=buttons)
 
@@ -226,8 +219,7 @@ async def rules_anon(e):
                 "You haven't set any rules yet; how about you do that first?"
             )
         elif cb_data == "None":
-            mode = db.get_private_rules(e.chat_id)
-            if mode:
+            if mode := db.get_private_rules(e.chat_id):
                 await e.edit("Use of /rules will send the rules to the user's PM.")
             else:
                 await e.edit(

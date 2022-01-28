@@ -39,7 +39,7 @@ def file_ids(msg):
 
 
 def id_tofile(file_id, access_hash, file_reference, type):
-    if file_id == None:
+    if file_id is None:
         return None
     if type == "doc":
         return types.InputDocument(
@@ -55,10 +55,9 @@ def id_tofile(file_id, access_hash, file_reference, type):
             sizes=[718118],
         )
     elif type == "geo":
-        geo_file = types.InputMediaGeoPoint(
+        return types.InputMediaGeoPoint(
             types.InputGeoPoint(float(file_id), float(access_hash))
         )
-        return geo_file
 
 
 @Cbot(pattern="^/save ?(.*)")
@@ -72,9 +71,10 @@ async def save(event):
         return
     if event.from_id:
         file_id = access_hash = file_reference = type = None
-        if event.is_group:
-            if not await can_change_info(event, event.sender_id):
-                return
+        if event.is_group and not await can_change_info(
+            event, event.sender_id
+        ):
+            return
         try:
             f_text = event.text.split(None, 1)[1]
         except IndexError:
@@ -98,7 +98,7 @@ async def save(event):
                 _buttons = get_reply_msg_btns_text(r_msg)
                 note = r_msg.text + _buttons
             x = [n, note]
-        elif f_text:
+        else:
             n = f_text or "x"
             x = n.split(" ", 1)
             if len(x) == 1:
@@ -117,13 +117,11 @@ async def pnotes(event):
         )
     if not event.from_id:
         return  # for now
-    if event.is_group:
-        if not await can_change_info(event, event.sender_id):
-            return
+    if event.is_group and not await can_change_info(event, event.sender_id):
+        return
     arg = event.pattern_match.group(1)
     if not arg:
-        mode = db.get_pnotes(event.chat_id)
-        if mode:
+        if mode := db.get_pnotes(event.chat_id):
             await event.reply(
                 "Your notes are currently being sent in private. neko will send a small note with a button which redirects to a private chat."
             )
@@ -156,9 +154,10 @@ async def new_message_note(event):
         caption = note["note"]
         if "{admin}" in caption:
             caption = caption.replace("{admin}", "")
-            if event.is_group:
-                if not await is_admin(event.chat_id, event.sender_id):
-                    return
+            if event.is_group and not await is_admin(
+                event.chat_id, event.sender_id
+            ):
+                return
         elif "{private}" in caption:
             caption = caption.replace("{private}", "")
             p_mode = True
@@ -208,9 +207,10 @@ async def get(event):
         caption = note["note"]
         if "{admin}" in caption:
             caption = caption.replace("{admin}", "")
-            if event.is_group:
-                if not await is_admin(event.chat_id, event.sender_id):
-                    return
+            if event.is_group and not await is_admin(
+                event.chat_id, event.sender_id
+            ):
+                return
         elif "{private}" in caption:
             caption = caption.replace("{private}", "")
             p_mode = True
@@ -253,17 +253,15 @@ async def clear(event):
         return
     if not event.from_id:
         return  # for now
-    if event.is_group:
-        if not await can_change_info(event, event.sender_id):
-            return
+    if event.is_group and not await can_change_info(event, event.sender_id):
+        return
     try:
         args = event.text.split(None, 1)[1]
     except IndexError:
         args = None
     if not args:
         return await event.reply("Not enough arguments!")
-    noted = db.get_note(event.chat_id, args)
-    if noted:
+    if noted := db.get_note(event.chat_id, args):
         await event.reply("Note '{}' deleted!".format(args))
         return db.delete_note(event.chat_id, args)
     await event.reply("You haven't saved any notes with this name yet!")
@@ -275,8 +273,7 @@ async def alln(event):
         return await event.reply(
             "This command is made to be used in group chats, not in pm!"
         )
-    p_mode = db.get_pnotes(event.chat_id)
-    if p_mode:
+    if p_mode := db.get_pnotes(event.chat_id):
         await event.respond(
             "Tap here to view all notes in this chat.",
             buttons=Button.url(
@@ -298,10 +295,12 @@ async def alln(event):
 
 @Cbot(pattern="^/clearall")
 async def delallfilters(event):
-    if event.is_group:
-        if event.from_id:
-            if not await is_owner(event, event.sender_id):
-                return
+    if (
+        event.is_group
+        and event.from_id
+        and not await is_owner(event, event.sender_id)
+    ):
+        return
     buttons = [
         [Button.inline("Delete all notes", data="clearall")],
         [Button.inline("Cancel", data="cancelclearall")],

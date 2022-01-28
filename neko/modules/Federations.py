@@ -21,10 +21,7 @@ anon_db = {}
 
 def is_user_fed_admin(fed_id, user_id):
     fed_admins = db.get_all_fed_admins(fed_id) or []
-    if int(user_id) in fed_admins or int(user_id) == OWNER_ID:
-        return True
-    else:
-        return False
+    return int(user_id) in fed_admins or int(user_id) == OWNER_ID
 
 
 @Cbot(pattern="^/newfed(@MissNeko_Bot)? ?(.*)")
@@ -32,8 +29,7 @@ async def newfed(event):
     if not event.is_private:
         return await event.reply("Create your federation in my PM - not in a group.")
     name = event.pattern_match.group(1)
-    f_owner = db.get_user_owner_fed_full(event.sender_id)
-    if f_owner:
+    if f_owner := db.get_user_owner_fed_full(event.sender_id):
         fed_name = f_owner[1]
         return await event.reply(
             f"You already have a federation called `{fed_name}` ; you can't create another. If you would like to rename it, use `/renamefed`."
@@ -134,8 +130,7 @@ async def jfed(event):
                 "This FedID does not refer to an existing federation."
             )
         name = getfed["fedname"]
-        fed_id = db.get_chat_fed(event.chat_id)
-        if fed_id:
+        if fed_id := db.get_chat_fed(event.chat_id):
             db.chat_leave_fed(fed_id, event.chat_id)
         db.chat_join_fed(args, event.chat_id)
         await event.reply(
@@ -149,11 +144,9 @@ async def lfed(event):
         return await event.reply("Only supergroups can join/leave feds.")
     if not event.from_id:
         return await anon_fed(event, "leavefed")
-    if event.from_id:
-        if not await is_owner(event, event.sender_id):
-            return
-    fed_id = db.get_chat_fed(event.chat_id)
-    if fed_id:
+    if not await is_owner(event, event.sender_id):
+        return
+    if fed_id := db.get_chat_fed(event.chat_id):
         fname = (db.search_fed_by_id(fed_id))["fname"]
         await event.reply(
             'Chat {} has left the "{}" federation.'.format(event.chat.title, fname)
@@ -189,14 +182,10 @@ async def fp(event):
         return await event.reply("Yeah well you are the fed owner!")
     fban, fbanreason, fbantime = db.get_fban_user(fed_id, user.id)
     if fban:
-        if fbanreason:
-            reason = "\n\nReason: <code>{fbanreason}</code>"
-        else:
-            reason = ""
+        reason = "\n\nReason: <code>{fbanreason}</code>" if fbanreason else ""
         txt = f"User <a href='tg://user?id={user.id}'>{user.first_name}</a> is fbanned in {fname}. You should unfban them before promoting.{reason}"
         return await event.reply(txt, parse_mode="html")
-    getuser = db.search_user_in_fed(fed_id, user.id)
-    if getuser:
+    if getuser := db.search_user_in_fed(fed_id, user.id):
         return await event.reply(
             f"<a href='tg://user?id={user.id}'>{user.first_name}</a> is already an admin in {fname}!",
             parse_mode="html",
@@ -219,7 +208,7 @@ async def fp_cb(event):
     fedowner = db.get_user_owner_fed_full(owner_id)
     fname = fedowner[1]
     fed_id = fedowner[0]
-    if not event.sender_id == user_id:
+    if event.sender_id != user_id:
         return await event.answer("You are not the user being fpromoted", alert=True)
     name = (await tbot.get_entity(user_id)).first_name
     db.user_join_fed(fed_id, user_id)
@@ -320,8 +309,7 @@ async def ft(event):
     fed_id = fedowner[0]
     if user_r.id == sender_id:
         return await event.reply("You can only transfer your fed to others!")
-    ownerfed = db.get_user_owner_fed_full(user_r.id)
-    if ownerfed:
+    if ownerfed := db.get_user_owner_fed_full(user_r.id):
         return await event.reply(
             f"<a href='tg://user?id={user_r.id}'>{user_r.first_name}</a> already owns a federation - they can't own another.",
             parse_mode="html",
@@ -347,7 +335,7 @@ async def ft(event):
     input = input.split("|", 1)
     owner_id = int(input[0])
     user_id = int(input[1])
-    if not event.sender_id == user_id:
+    if event.sender_id != user_id:
         return await event.answer("This action is not intended for you.", alert=True)
     fedowner = db.get_user_owner_fed_full(owner_id)
     fed_id = fedowner[1]
@@ -371,7 +359,7 @@ async def noft(event):
     input = input.split("|", 1)
     owner_id = int(input[0])
     user_id = int(input[1])
-    if not event.sender_id in [user_id, owner_id]:
+    if event.sender_id not in [user_id, owner_id]:
         return await event.answer("This action is not intended for you.", alert=True)
     if event.sender_id == owner_id:
         user_name = ((event.sender.first_name).replace("<", "&lt;")).replace(
@@ -410,7 +398,7 @@ async def noft(event):
     input = input.split("|", 1)
     owner_id = int(input[0])
     user_id = int(input[1])
-    if not event.sender_id == owner_id:
+    if event.sender_id != owner_id:
         return await event.answer("This action is not intended for you.", alert=True)
     f_text = "Congratulations! Federation {} (<code>{}</code>) has successfully been transferred from <a href='tg://user?id={}'>{}</a> to <a href='tg://user?id={}'>{}</a>."
     o_name = ((event.sender.first_name).replace("<", "&lt;")).replace(">", "&gt;")
@@ -439,7 +427,7 @@ async def noft(event):
     input = ((event.pattern_match.group(1)).decode()).split("_", 1)[1]
     input = input.split("|", 1)
     owner_id = int(input[0])
-    if not event.sender_id == owner_id:
+    if event.sender_id != owner_id:
         return await event.answer("This action is not intended for you.", alert=True)
     await event.edit(
         "Fed transfer has been cancelled by <a href='tg://user?id={owner_id}'>{event.sender.first_name}</a>.",
@@ -457,8 +445,7 @@ async def fed_notif(event):
         return await event.reply("You aren't the creator of any feds to act in.")
     fname = fedowner[1]
     if not args:
-        mode = db.user_feds_report(event.sender_id)
-        if mode:
+        if mode := db.user_feds_report(event.sender_id):
             f_txt = "The `{}` fed is currently sending notifications to it's creator when a fed action is performed."
         else:
             f_txt = "The `{}` fed is currently **NOT** sending notifications to it's creator when a fed action is performed."
@@ -553,12 +540,11 @@ async def fban(event):
         return await event.reply(
             "I don't know who you're talking about, you're going to need to specify a user...!"
         )
-    if reason:
-        if len(reason) > 1024:
-            reason = (
-                reason[:1024]
-                + "\n\nNote: The fban reason was over 1024 characters, so has been truncated."
-            )
+    if reason and len(reason) > 1024:
+        reason = (
+            reason[:1024]
+            + "\n\nNote: The fban reason was over 1024 characters, so has been truncated."
+        )
     if user.id == BOT_ID:
         return await event.reply(
             "Oh you're a funny one aren't you! I am _not_ going to fedban myself."
@@ -584,7 +570,7 @@ async def fban(event):
                 ),
                 parse_mode="html",
             )
-        elif reason == None:
+        elif reason is None:
             if not fbanreason:
                 return await event.reply(
                     "User <a href='tg://user?id={}'>{}</a> is already banned in {}.".format(
@@ -607,9 +593,7 @@ async def fban(event):
             reason,
             datetime.datetime.now(),
         )
-        p_reason = ""
-        if fbanreason:
-            p_reason = f"\n<b>Previous Reason:</b> {fbanreason}"
+        p_reason = f"\n<b>Previous Reason:</b> {fbanreason}" if fbanreason else ""
         fban_global_text = update_fban.format(
             fname,
             event.sender_id,
@@ -647,15 +631,13 @@ async def fban(event):
     log_c = db.get_fed_log(fed_id)
     if log_c and event.chat_id != int(log_c):
         await tbot.send_message(int(log_c), fban_global_text, parse_mode="html")
-    fed_chats = list(db.get_all_fed_chats(fed_id))
-    if len(fed_chats) != 0:
+    if fed_chats := list(db.get_all_fed_chats(fed_id)):
         for c in fed_chats:
             try:
                 await tbot.edit_permissions(int(c), view_messages=False)
             except:
                 pass
-    subs = list(db.get_fed_subs(fed_id))
-    if len(subs) != 0:
+    if subs := list(db.get_fed_subs(fed_id)):
         for fed in subs:
             db.fban_user(
                 fed,
@@ -718,12 +700,11 @@ async def unfban(event):
         return await event.reply(
             "I don't know who you're talking about, you're going to need to specify a user...!"
         )
-    if reason:
-        if len(reason) > 1024:
-            reason = (
-                reason[:1024]
-                + "\n\nNote: The unfban reason was over 1024 characters, so has been truncated."
-            )
+    if reason and len(reason) > 1024:
+        reason = (
+            reason[:1024]
+            + "\n\nNote: The unfban reason was over 1024 characters, so has been truncated."
+        )
     if user.id == BOT_ID:
         return await event.reply(
             "Oh you're a funny one aren't you! How do you think I would have fbanned myself hm?."
@@ -760,10 +741,8 @@ async def unfban(event):
 async def CF(c):
     if c.is_private:
         return
-    if c.is_group:
-        if c.from_id:
-            if not await is_admin(c.chat_id, c.sender_id):
-                return await c.reply("You need to be an admin to do this.")
+    if c.is_group and c.from_id and not await is_admin(c.chat_id, c.sender_id):
+        return await c.reply("You need to be an admin to do this.")
     fed_id = db.get_chat_fed(c.chat_id)
     if not fed_id:
         return await c.reply("This chat isn't part of any feds yet!")
@@ -788,9 +767,8 @@ Number of subscribed feds: <code>{}</code>
 
 @Cbot(pattern="^/fedinfo ?(.*)")
 async def finfo(event):
-    if event.is_group:
-        if not await is_admin(event.chat_id, event.sender_id):
-            return await event.reply("This command can only be used in private.")
+    if event.is_group and not await is_admin(event.chat_id, event.sender_id):
+        return await event.reply("This command can only be used in private.")
     if not event.from_id:
         return await anon_fed(event, "fedinfo")
     fedowner = db.get_user_owner_fed_full(event.sender_id)
@@ -809,7 +787,7 @@ async def finfo(event):
             )
         fname = getfed["fedname"]
         fed_id = input
-    elif fedowner:
+    else:
         fed_id = fedowner[0]
         fname = fedowner[1]
     info = db.search_fed_by_id(fed_id)
@@ -842,9 +820,8 @@ async def finfo(event):
 
 @Cinline(pattern=r"check_fadmins(\_(.*))")
 async def check_fadmins(e):
-    if e.is_group:
-        if not await is_admin(e.chat_id, e.sender_id):
-            return await e.answer("You need to be an admin to do this!")
+    if e.is_group and not await is_admin(e.chat_id, e.sender_id):
+        return await e.answer("You need to be an admin to do this!")
     fed_id = ((e.pattern_match.group(1)).decode()).split("_", 1)[1]
     x_admins = db.get_all_fed_admins(fed_id) or []
     fname = (db.search_fed_by_id(fed_id))["fedname"]
@@ -1053,14 +1030,11 @@ async def fed_export___(e):
     fbans = db.get_all_fbans(fedowner[0])
     if not fbans:
         return await e.reply("There are no banned users in {}".format(fname))
-    if not len(e.text.split(" ", 1)) == 2:
+    if len(e.text.split(" ", 1)) != 2:
         mode = "csv"
     elif len(e.text.split(" ", 1)) == 2:
         pc = e.text.split(" ", 1)[1].lower()
-        if not pc in ["csv", "json", "xml"]:
-            mode = "csv"
-        else:
-            mode = pc
+        mode = "csv" if pc not in ["csv", "json", "xml"] else pc
     else:
         mode = "csv"
     if mode == "csv":
@@ -1099,10 +1073,8 @@ async def fed_export___(e):
                 {"Name": fb[0], "User ID": fban, "Reason": fb[2], "Time": str(fb[3])}
             )
         xml_str = ""
-        qp = 0
-        for x in fban_list:
+        for qp, x in enumerate(fban_list, start=1):
             el = Element("fban")
-            qp += 1
             el.set("sn", str(qp))
             for c, v in x.items():
                 child = Element(str(c))
@@ -1123,7 +1095,7 @@ async def fed_import___(e):
             "You need to reply to the document containing the banlist, as a .txt file."
         )
     r = await e.get_reply_message()
-    if not e.media and not r.file.ext in [".xml", ".json", ".csv"]:
+    if not e.media and r.file.ext not in [".xml", ".json", ".csv"]:
         return await e.reply(
             "You need to reply to the document containing the banlist, as a .txt file."
         )
@@ -1162,11 +1134,9 @@ async def fed_import___(e):
             )
         )
     elif Ext == "json":
-        fbans = []
         with open(f, "r") as f:
             fp = f.readlines()
-        for x in fp:
-            fbans.append(json.loads(x))
+        fbans = [json.loads(x) for x in fp]
         for x in fbans:
             db.fban_user(
                 fed_id,

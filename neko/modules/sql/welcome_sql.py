@@ -82,8 +82,7 @@ def add_welcome_setting(
 
 
 def rm_welcome_setting(chat_id):
-    rem = SESSION.query(Welcome).get(str(chat_id))
-    if rem:
+    if rem := SESSION.query(Welcome).get(str(chat_id)):
         SESSION.delete(rem)
         SESSION.commit()
 
@@ -131,8 +130,7 @@ def add_goodbye_setting(
 
 
 def rm_goodbye_setting(chat_id):
-    rem = SESSION.query(Goodbye).get(str(chat_id))
-    if rem:
+    if rem := SESSION.query(Goodbye).get(str(chat_id)):
         SESSION.delete(rem)
         SESSION.commit()
 
@@ -181,10 +179,7 @@ def set_welcome_mode(chat_id: str, mode):
 
 
 def welcome_mode(chat_id: str):
-    wel = SESSION.query(Wlc).get(str(chat_id))
-    if wel:
-        return wel.mode
-    return True
+    return wel.mode if (wel := SESSION.query(Wlc).get(str(chat_id))) else True
 
 
 def set_clean_service(chat_id: str, mode):
@@ -198,8 +193,7 @@ def set_clean_service(chat_id: str, mode):
 
 
 def get_clean_service(chat_id):
-    wel = SESSION.query(Wlc).get(str(chat_id))
-    if wel:
+    if wel := SESSION.query(Wlc).get(str(chat_id)):
         return wel.clean_service
     return False
 
@@ -215,7 +209,4 @@ def set_goodbye_mode(chat_id: str, mode):
 
 
 def goodbye_mode(chat_id: str):
-    goodb = SESSION.query(GB).get(str(chat_id))
-    if goodb:
-        return goodb.mode
-    return True
+    return goodb.mode if (goodb := SESSION.query(GB).get(str(chat_id))) else True

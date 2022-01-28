@@ -24,7 +24,7 @@ async def nan(event):
     builder = event.builder
     text = event.text
     text = text.replace("@MissNeko_Bot", "")
-    if not text == "":
+    if text != "":
         return
     icon = InputWebDocument(
         url="https://telegra.ph/file/ee773e55c2e839255107a.jpg",
@@ -49,8 +49,7 @@ async def nan(event):
 
 
 def gen_status():
-    txt = "**Neko Info**:"
-    txt += "\nServer: Heroku"
+    txt = "**Neko Info**:" + "\nServer: Heroku"
     txt += "\nDatabase: MongoDB"
     txt += "\nTelethon: 1.23"
     txt += "\nPython: 3.11"
@@ -147,9 +146,8 @@ async def whisper_message(event):
     rec_id = input[0]
     reply_to = input[1]
     print(rec_id)
-    if not reply_to == "Nil":
-        if not event.sender_id == int(reply_to):
-            return await event.answer("This was not send for you!", alert=True)
+    if reply_to != "Nil" and event.sender_id != int(reply_to):
+        return await event.answer("This was not send for you!", alert=True)
     try:
         w_message = whisper_db[int(rec_id)]
     except KeyError:
@@ -247,18 +245,7 @@ async def yt_q(event):
     builder = event.builder
     query = event.pattern_match.group(1)
     results = []
-    search = SearchVideos(query, offset=1, mode="dict", max_results=5)
-    if not search:
-        result = builder.article(
-            title="No Results.",
-            description="Try Again With correct Spelling",
-            text="**No Matching Found**",
-            buttons=[
-                [Button.switch_inline("Search Again", query="yt ", same_peer=True)],
-            ],
-        )
-        results.append(result)
-    else:
+    if search := SearchVideos(query, offset=1, mode="dict", max_results=5):
         for x in (search.result())["search_result"]:
             link = x["link"]
             title = x["title"]
@@ -284,6 +271,16 @@ async def yt_q(event):
                     ),
                 )
             )
+    else:
+        result = builder.article(
+            title="No Results.",
+            description="Try Again With correct Spelling",
+            text="**No Matching Found**",
+            buttons=[
+                [Button.switch_inline("Search Again", query="yt ", same_peer=True)],
+            ],
+        )
+        results.append(result)
     await event.answer(results)
 
 
@@ -373,7 +370,7 @@ async def imdb_data_(e):
     desc = (soup.find("meta", attrs={"property": "twitter:description"})).get("content")
     genre = soup.findAll("span", attrs={"class": "ipc-chip__text"})
     genr_e = "\n**Genre:**"
-    for x in range(0, 3):
+    for x in range(3):
         if x != 2:
             genr_e += " " + genre[x].text + ","
         if x == 2:
@@ -841,7 +838,7 @@ async def image_search(e):
     )
     pp = []
     i = 0
-    for x in range(0, 3):
+    for _ in range(3):
         i += 1
         path = f"dataset/{q}/Image_{i}.jpg"
         pp.append(await e.builder.photo(path))
@@ -932,8 +929,6 @@ async def instagram_search_(e):
                 mime_type="image/jpeg",
                 attributes=[],
             )
-        else:
-            pass
         answers.append(
             await e.builder.article(
                 title=username,
@@ -973,10 +968,7 @@ async def imdb_data_(e):
     r_new = get(rq_url, headers=usr_agent)
     soup = BeautifulSoup(r_new.content, "html.parser")
     description = soup.find("div", attrs={"class": "profile-description"})
-    if description:
-        description = description.text
-    else:
-        description = ""
+    description = description.text if description else ""
     img = soup.findAll("img")
     if img and img[1]:
         img = "https://gramho.com/" + img[1].get("src")
@@ -1019,13 +1011,8 @@ async def sci_search_(e):
         abstract = _x.get("abstract")
         if len(abstract) > 1024:
             abstract = abstract[:1024]
-        authors = ""
-        for au in _x.get("authors"):
-            authors += " " + au.get("name") or ""
-        if _x.get("journal"):
-            book = _x.get("journal").get("name")
-        else:
-            book = ""
+        authors = "".join(" " + au.get("name") or "" for au in _x.get("authors"))
+        book = _x.get("journal").get("name") if _x.get("journal") else ""
         year = _x.get("year") or ">2010"
         text = f"**{title}**\n**Authors**: {authors}\n**Journel:** {book}\n**Released:** {year}\n\n`{abstract}`"
         description = f"Year: {year}\n{authors}\n{book}"
@@ -1206,10 +1193,7 @@ async def fit_girl_search_(e):
 @Cquery(pattern="gay ?(.*)")
 async def how_gey_(e):
     q = e.pattern_match.group(1)
-    if not q:
-        name = e.sender.first_name
-    else:
-        name = q
+    name = e.sender.first_name if not q else q
     percentage = str(random.randint(0, 100)) + "%"
     if not q:
         text = "🏳️‍🌈 I am {} gay!".format(percentage)
@@ -1268,9 +1252,7 @@ async def stack_overflow_search__(e):
         view_count = x.get("view_count")
         author = x.get("display_name")
         img = x.get("profile_image")
-        tags = ""
-        for x in tgs:
-            tags += str(x) + " "
+        tags = "".join(str(x) + " " for x in tgs)
         if img:
             thumb = InputWebDocument(
                 url=img,

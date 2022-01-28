@@ -117,43 +117,43 @@ async def gt(event):
         pass
     try:
         company = git["company"]
-        if not company == None:
+        if not company is None:
             text += f"\n<b>Company:</b> {company}"
     except KeyError:
         pass
     try:
         followers = git["followers"]
-        if not followers == None:
+        if not followers is None:
             text += f"\n<b>Followers:</b> {followers}"
     except KeyError:
         pass
     try:
         blog = git["blog"]
-        if not blog == None:
+        if not blog is None:
             text += f"\n<b>Blog:</b> <code>{blog}</code>"
     except KeyError:
         pass
     try:
         location = git["location"]
-        if not location == None:
+        if not location is None:
             text += f"\n<b>Location:</b> {location}"
     except KeyError:
         pass
     try:
         bio = git["bio"]
-        if not bio == None:
+        if not bio is None:
             text += f"\n\n<b>Bio:</b> <code>{bio}</code>"
     except KeyError:
         pass
     try:
         twitter = git["twitter_username"]
-        if not twitter == None:
+        if not twitter is None:
             text += f"\n\n<b>Twitter:</b> {twitter}"
     except KeyError:
         pass
     try:
         email = git["email"]
-        if not email == None:
+        if not email is None:
             text += f"\n<b>Email:</b> <code>{email}</code>"
     except KeyError:
         pass
@@ -331,24 +331,23 @@ async def az(event):
 
 @Cbot(pattern="^/(color|Color|Colour|colour)")
 async def colt(e):
-    api_key = "58199388-5499-4c98-b052-c679b16310f9"
     if not e.reply_to_msg_id:
         return await e.reply("Reply to an Image to add color to it!")
-    elif e.reply_to_msg_id:
-        file = await e.get_reply_message()
-        if not file.sticker and not file.photo:
-            return await e.reply(
-                "That's not an image, please reply to an Image to add color to it!"
-            )
-        ud = await e.reply("**Colourizing** the image...")
-        media = await tbot.download_media(file)
-        r = post(
-            "https://api.deepai.org/api/colorizer",
-            files={
-                "image": open(media, "rb"),
-            },
-            headers={"api-key": api_key},
+    file = await e.get_reply_message()
+    if not file.sticker and not file.photo:
+        return await e.reply(
+            "That's not an image, please reply to an Image to add color to it!"
         )
+    ud = await e.reply("**Colourizing** the image...")
+    media = await tbot.download_media(file)
+    api_key = "58199388-5499-4c98-b052-c679b16310f9"
+    r = post(
+        "https://api.deepai.org/api/colorizer",
+        files={
+            "image": open(media, "rb"),
+        },
+        headers={"api-key": api_key},
+    )
     remove(media)
     if "status" in r.json():
         return await ud.edit(r.json()["status"])
@@ -536,14 +535,13 @@ async def _(event):
 
 @Cbot(pattern="^/stt$")
 async def b(event):
-    if event.reply_to_msg_id:
-        reply_msg = await event.get_reply_message()
-        if not reply_msg.media:
-            return await event.reply(
-                "Reply to a voice message, to get the text out of it."
-            )
-    else:
+    if not event.reply_to_msg_id:
         return await event.reply("Reply to a voice message, to get the text out of it.")
+    reply_msg = await event.get_reply_message()
+    if not reply_msg.media:
+        return await event.reply(
+            "Reply to a voice message, to get the text out of it."
+        )
     audio = await tbot.download_media(reply_msg, "./")
     kek = await event.reply("Starting Analysis...")
     headers = {
@@ -566,12 +564,12 @@ async def b(event):
             alternatives = alternative["alternatives"][0]
             transcript_response += " " + str(alternatives["transcript"])
             transcript_confidence += " " + str(alternatives["confidence"]) + " + "
-        if transcript_response != "":
+        if not transcript_response:
+            string_to_show = "TRANSCRIPT: `Nil`\n\n**No Results Found**"
+        else:
             string_to_show = "TRANSCRIPT: __{}__\nConfidence: `{}`".format(
                 transcript_response, transcript_confidence
             )
-        else:
-            string_to_show = "TRANSCRIPT: `Nil`\n\n**No Results Found**"
         await kek.edit(string_to_show)
     else:
         await event.reply(response["error"])
@@ -612,32 +610,26 @@ async def cc_gen(e):
     if "-" in input and len(input.split("-", 1)) >= 2:
         no_r = input.split("-", 1)[1]
         input = input[: (len(input) - len(no_r))]
-        if no_r.isdigit():
-            no_r = int(no_r)
-        else:
-            no_r = 3
+        no_r = int(no_r) if no_r.isdigit() else 3
     input = input.replace(" -", "")
     input = input.replace("x", "")
     q = input.replace("|", "")
     print(q)
     if not q.isdigit():
         return await e.reply("number bej bmsdk")
-    if no_r > 50:
-        no_r = 50
+    no_r = min(no_r, 50)
     if "|" in input:
         x = input.split("|")
+        cc = x[0]
         if len(x) == 4:
-            cc = x[0]
             mo = x[1]
             yr = x[2]
             cvv = x[3]
         elif len(x) == 3:
-            cc = x[0]
             mo = x[1]
             yr = x[2]
             cvv = None
         elif len(x) == 2:
-            cc = x[0]
             yr = None
             if len(x[1]) <= 2:
                 mo = x[1]
@@ -646,7 +638,6 @@ async def cc_gen(e):
                 mo = None
                 cvv = x[1]
         else:
-            cc = x[0]
             cvv = mo = yr = None
         if len(cvv) == 2:
             cvv = "0" + cvv
@@ -658,7 +649,7 @@ async def cc_gen(e):
     cc_len = 16
     gen_len = cc_len - len(str(cc))
     final_t = f"**generated** for `{input}`:"
-    for q in range(no_r):
+    for _ in range(no_r):
         genn = cc
         for x in range(gen_len):
             genn += str(randint(0, 9))
@@ -668,14 +659,8 @@ async def cc_gen(e):
                 month = "0" + month
         else:
             month = mo
-        if not yr:
-            year = str(randint(22, 30))
-        else:
-            year = yr
-        if not cvv:
-            cvv2 = str(randint(10, 999))
-        else:
-            cvv2 = cvv
+        year = str(randint(22, 30)) if not yr else yr
+        cvv2 = str(randint(10, 999)) if not cvv else cvv
         if len(cvv2) == 2:
             cvv2 = "0" + cvv2
         final = genn + "|" + month + "|" + "20" + year + "|" + cvv2

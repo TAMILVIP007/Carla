@@ -38,15 +38,14 @@ async def fsub(event):
     except IndexError:
         channel = None
     if not channel:
-        chat_db = db.fs_settings(event.chat_id)
-        if not chat_db:
-            await event.reply(
-                "<b>❌ Force Subscribe is disabled in this chat.</b>", parse_mode="HTML"
-            )
-        else:
+        if chat_db := db.fs_settings(event.chat_id):
             await event.reply(
                 f"Forcesubscribe is currently <b>enabled</b>. Users are forced to join <b>@{chat_db.channel}</b> to speak here.",
                 parse_mode="html",
+            )
+        else:
+            await event.reply(
+                "<b>❌ Force Subscribe is disabled in this chat.</b>", parse_mode="HTML"
             )
     elif channel in ["on", "yes", "y"]:
         await event.reply("❗Please specify the channel username.")
@@ -81,10 +80,9 @@ async def fsub_n(e):
         return
     if e.is_private:
         return
-    if e.chat.admin_rights:
-        if not e.chat.admin_rights.ban_users:
-            return
-    else:
+    if not e.chat.admin_rights:
+        return
+    if not e.chat.admin_rights.ban_users:
         return
     if not e.from_id:
         return
@@ -111,7 +109,7 @@ async def fsub_n(e):
 @Cinline(pattern=r"fs(\_(.*))")
 async def unmute_fsub(event):
     user_id = int(((event.pattern_match.group(1)).decode()).split("_", 1)[1])
-    if not event.sender_id == user_id:
+    if event.sender_id != user_id:
         return await event.answer("This is not meant for you.", alert=True)
     channel = (db.fs_settings(event.chat_id)).get("channel")
     try:

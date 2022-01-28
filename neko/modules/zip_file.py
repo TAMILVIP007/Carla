@@ -21,8 +21,7 @@ from ..utils import Cbot, Cinline
 
 @Cbot(pattern="^/unzip")
 async def e_unzip(event):
-    x_u = x_db.find_one({"user_id": event.sender_id})
-    if x_u:
+    if x_u := x_db.find_one({"user_id": event.sender_id}):
         x_time_wait = (datetime.datetime.now() - x_u["date_added"]).total_seconds()
         x_time_wait_format = 60 - int(x_time_wait)
         if x_time_wait < 60:
@@ -31,8 +30,6 @@ async def e_unzip(event):
                     x_time_wait_format
                 )
             )
-        else:
-            pass
     x_db.update_one(
         {"user_id": event.sender_id},
         {"$set": {"date_added": datetime.datetime.now()}},
@@ -40,35 +37,32 @@ async def e_unzip(event):
     )
     if not event.reply_to:
         return
-    if event.reply_to:
-        zip_file = await event.get_reply_message()
-        if not zip_file.media:
-            return
-        if not zip_file.file.name.endswith(".zip"):
-            return await event.reply("That's not a zip file.")
-        if zip_file.file.size > 3464400:
-            return await event.reply(
-                "File size limit exceeds, The maximum file size allowed is 3.5MB."
-            )
-        x_text = """
+    zip_file = await event.get_reply_message()
+    if not zip_file.media:
+        return
+    if not zip_file.file.name.endswith(".zip"):
+        return await event.reply("That's not a zip file.")
+    if zip_file.file.size > 3464400:
+        return await event.reply(
+            "File size limit exceeds, The maximum file size allowed is 3.5MB."
+        )
+    x_text = """
 Choose appropriate action 
 
 🗃 = Normal files 
 🔓 = Password protected files 
 ❌ = Cancel Process
 """
-        x_buttons = [
-            [
-                Button.inline("Unzip🗃", data=f"unzip_{event.id}"),
-                Button.inline("Password🔓", data=f"zpassword_{event.id}"),
-            ],
-            [Button.inline("Cancel ❌", data="unzip_cancel")],
-        ]
-        await event.reply(x_text, buttons=x_buttons)
-        zip_db[event.id] = zip_file.file.name
-        await tbot.download_media(zip_file)
-    else:
-        return
+    x_buttons = [
+        [
+            Button.inline("Unzip🗃", data=f"unzip_{event.id}"),
+            Button.inline("Password🔓", data=f"zpassword_{event.id}"),
+        ],
+        [Button.inline("Cancel ❌", data="unzip_cancel")],
+    ]
+    await event.reply(x_text, buttons=x_buttons)
+    zip_db[event.id] = zip_file.file.name
+    await tbot.download_media(zip_file)
 
 
 @Cinline(pattern="unzip_cancel")

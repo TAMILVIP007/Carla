@@ -27,14 +27,11 @@ async def excecute_operation(
 ):
     if reply_to == event.id:
         reply_to = event.reply_to_msg_id or event.id
-    r = ""
-    if reason:
-        r = f"\nReason: <code>{reason}</code>"
+    r = f"\nReason: <code>{reason}</code>" if reason else ""
     if name:
         name = ((name).replace("<", "&lt;")).replace(">", "&gt;")
-    if event.chat.admin_rights:
-        if not event.chat.admin_rights.ban_users:
-            return await event.reply("I haven't got the rights to do this.")
+    if event.chat.admin_rights and not event.chat.admin_rights.ban_users:
+        return await event.reply("I haven't got the rights to do this.")
     if user_id in DEVS and mode in ["ban", "tban", "mute", "tmute", "kick"]:
         return await event.reply("Sorry, I can't act against my devs!")
     if mode == "ban":
@@ -151,18 +148,19 @@ async def dban(event):
         )
     if not event.from_id:
         return await a_ban(event, "dban")
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
-    if event.reply_to_msg_id:
-        reply_msg = await event.get_reply_message()
-        if event.chat.admin_rights.delete_messages:
-            await reply_msg.delete()
-    else:
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
+    if not event.reply_to_msg_id:
         return await event.reply(
             "You have to reply to a message to delete it and ban the user."
         )
+    reply_msg = await event.get_reply_message()
+    if event.chat.admin_rights.delete_messages:
+        await reply_msg.delete()
     reason = ""
     user = None
     try:
@@ -208,10 +206,12 @@ async def ban(event):
         )
     if not event.from_id:
         return await a_ban(event, "ban")
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
     reason = ""
     user = None
     try:
@@ -250,10 +250,12 @@ async def ban(event):
         )
     if not event.from_id:
         return await a_ban(event, "sban")
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
     reason = ""
     user = None
     try:
@@ -299,10 +301,12 @@ async def unban(event):
         )
     if not event.from_id:
         return await a_ban(event, "unban")
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
     reason = ""
     user = None
     try:
@@ -341,18 +345,19 @@ async def dmute(event):
         )
     if not event.from_id:
         return await a_ban(event, "dmute")
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
-    if event.reply_to_msg_id:
-        reply_msg = await event.get_reply_message()
-        if event.chat.admin_rights.delete_messages:
-            await reply_msg.delete()
-    else:
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
+    if not event.reply_to_msg_id:
         return await event.reply(
             "You have to reply to a message to delete it and mute the user."
         )
+    reply_msg = await event.get_reply_message()
+    if event.chat.admin_rights.delete_messages:
+        await reply_msg.delete()
     reason = ""
     user = None
     try:
@@ -391,10 +396,12 @@ async def mute(event):
         )
     if not event.from_id:
         return await a_ban(event, "mute")
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
     reason = ""
     user = None
     try:
@@ -433,10 +440,12 @@ async def smute(event):
         )
     if not event.from_id:
         return await a_ban(event, "smute")
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
     reason = ""
     user = None
     try:
@@ -482,10 +491,12 @@ async def unmute(event):
         return await event.reply(
             "This command is made to be used in group chats, not in pm!"
         )
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
     reason = ""
     user = None
     try:
@@ -524,18 +535,19 @@ async def dkick(event):
         )
     if not event.from_id:
         return await a_ban(event, "kick")
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
-    if event.reply_to_msg_id:
-        reply_msg = await event.get_reply_message()
-        if event.chat.admin_rights.delete_messages:
-            await reply_msg.delete()
-    else:
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
+    if not event.reply_to_msg_id:
         return await event.reply(
             "You have to reply to a message to delete it and kick the user."
         )
+    reply_msg = await event.get_reply_message()
+    if event.chat.admin_rights.delete_messages:
+        await reply_msg.delete()
     reason = ""
     user = None
     try:
@@ -585,10 +597,12 @@ async def kick(event):
         )
     if not event.from_id:
         return await a_ban(event, "kick")
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
     reason = ""
     user = None
     try:
@@ -627,10 +641,12 @@ async def skick(event):
         )
     if not event.from_id:
         return await a_ban(event, "skick")
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
     reason = ""
     user = None
     try:
@@ -669,10 +685,12 @@ async def tban(event):
         )
     if not event.from_id:
         return await a_ban(event, "tban")
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
     reason = ""
     user = None
     try:
@@ -723,10 +741,12 @@ async def tmute(event):
         )
     if not event.from_id:
         return await a_ban(event, "tmute")
-    if event.is_group:
-        if not event.sender_id in DEVS:
-            if not await can_ban_users(event, event.sender_id):
-                return
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and not await can_ban_users(event, event.sender_id)
+    ):
+        return
     reason = ""
     user = None
     try:

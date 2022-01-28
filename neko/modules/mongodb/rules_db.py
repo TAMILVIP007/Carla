@@ -12,21 +12,18 @@ def set_rules(chat_id: int, rule_s: str):
 
 
 def get_rules(chat_id: int):
-    _rules = rules.find_one({"chat_id": chat_id})
-    if _rules:
+    if _rules := rules.find_one({"chat_id": chat_id}):
         return _rules["rules"]
     return False
 
 
 def del_rules(chat_id: int):
-    _rules = rules.find_one({"chat_id": chat_id})
-    if _rules:
+    if _rules := rules.find_one({"chat_id": chat_id}):
         rules.delete_one({"chat_id": chat_id})
 
 
 def set_private_rules(chat_id: int, mode):
-    _rules = rules.find_one({"chat_id": chat_id})
-    if _rules:
+    if _rules := rules.find_one({"chat_id": chat_id}):
         rule_s = _rules["rules"]
         button = _rules["button"]
     else:
@@ -40,15 +37,13 @@ def set_private_rules(chat_id: int, mode):
 
 
 def get_private_rules(chat_id: int):
-    _rules = rules.find_one({"chat_id": chat_id})
-    if _rules:
+    if _rules := rules.find_one({"chat_id": chat_id}):
         return _rules["private"]
     return False
 
 
 def set_rules_button(chat_id, button):
-    _rules = rules.find_one({"chat_id": chat_id})
-    if _rules:
+    if _rules := rules.find_one({"chat_id": chat_id}):
         rule_s = _rules["rules"]
         p = _rules["private"]
     else:
@@ -62,7 +57,6 @@ def set_rules_button(chat_id, button):
 
 
 def get_rules_button(chat_id: int):
-    _rules = rules.find_one({"chat_id": chat_id})
-    if _rules:
+    if _rules := rules.find_one({"chat_id": chat_id}):
         return _rules["button"]
     return "Rules"

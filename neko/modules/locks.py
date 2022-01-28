@@ -47,9 +47,12 @@ async def lock_item(event):
         return
     if event.is_private:
         return await event.reply("This command is made to be used in group chats.")
-    if event.is_group and event.from_id:
-        if not await can_change_info(event, event.sender_id):
-            return
+    if (
+        event.is_group
+        and event.from_id
+        and not await can_change_info(event, event.sender_id)
+    ):
+        return
     if not event.pattern_match.group(1):
         return await event.reply("You haven't specified a type to lock.")
     try:
@@ -57,11 +60,8 @@ async def lock_item(event):
     except IndexError:
         return await event.reply("You haven't specified a type to lock.")
     locks = lock_items.split(None)
-    lock_s = []
     av_locks = db.all_locks
-    for lock in locks:
-        if lock.lower() in av_locks:
-            lock_s.append(lock)
+    lock_s = [lock for lock in locks if lock.lower() in av_locks]
     if "all" in lock_s:
         db.lock_all(event.chat_id)
         await event.reply("Locked `all`")
@@ -70,20 +70,15 @@ async def lock_item(event):
         except Exception as e:
             print(e)
         return
-    if len(lock_s) == 0:
+    if not lock_s:
         await event.reply(f"Unknown lock types:- {lock_items}\nCheck /locktypes!")
     else:
-        qp = 0
         text = "Locked"
         if len(lock_s) == 1:
             text += f" `{lock_s[0]}`"
         else:
-            for i in lock_s:
-                qp += 1
-                if len(lock_s) == qp - 1:
-                    text += f" `{i}`"
-                else:
-                    text += f" `{i}`,"
+            for qp, i in enumerate(lock_s, start=1):
+                text += f" `{i}`" if len(lock_s) == qp - 1 else f" `{i}`,"
         await event.reply(text)
     for lock in lock_s:
         db.add_lock(event.chat_id, lock.lower())
@@ -121,9 +116,7 @@ async def locks(event):
     _final = "These are the current lock settings:"
     locked = db.get_locks(event.chat_id) or []
     for x in av_locks:
-        _mode = "false"
-        if x in locked:
-            _mode = "true"
+        _mode = "true" if x in locked else "false"
         _final = _final + "\n- " + x + " = " + _mode
     await event.reply(_final)
 
@@ -132,9 +125,12 @@ async def locks(event):
 async def unlock_item(event):
     if event.is_private:
         return await event.reply("This command is made to be used in group chats.")
-    if event.is_group and event.from_id:
-        if not await can_change_info(event, event.sender_id):
-            return
+    if (
+        event.is_group
+        and event.from_id
+        and not await can_change_info(event, event.sender_id)
+    ):
+        return
     if not event.from_id:
         return await a_locks(event, "unlock")
     if not event.pattern_match.group(1):
@@ -144,11 +140,8 @@ async def unlock_item(event):
     except IndexError:
         return await event.reply("You haven't specified a type to unlock.")
     unlocks = unlock_items.split(None)
-    unlock_s = []
     av_locks = db.all_locks
-    for unlock in unlocks:
-        if unlock.lower() in av_locks:
-            unlock_s.append(unlock)
+    unlock_s = [unlock for unlock in unlocks if unlock.lower() in av_locks]
     if "all" in unlock_s:
         db.unlock_all(event.chat_id)
         await event.reply("Unlocked `all`")
@@ -157,7 +150,7 @@ async def unlock_item(event):
         except:
             pass
         return
-    if len(unlock_s) == 0:
+    if not unlock_s:
         await event.reply(f"Unknown lock types:- {unlock_items}\nCheck /locktypes!")
     else:
         text = "Unlocked"
@@ -194,10 +187,9 @@ async def locks(event):
         return
     if not isinstance(event.sender, User):
         return
-    if event.chat.admin_rights:
-        if not event.chat.admin_rights.delete_messages:
-            return
-    else:
+    if not event.chat.admin_rights:
+        return
+    if not event.chat.admin_rights.delete_messages:
         return
     if approve_d.find_one({"user_id": event.sender_id, "chat_id": event.chat_id}):
         return
@@ -205,145 +197,173 @@ async def locks(event):
     if not locked or len(locked) == 0:
         return
     trigg = await lock_check(event, locked)
-    if trigg:
-        if not await is_admin(event.chat_id, event.sender_id):
-            await event.delete()
+    if trigg and not await is_admin(event.chat_id, event.sender_id):
+        await event.delete()
 
 
 async def lock_check(event, locked):
-    if "sticker" in locked:
-        if event.sticker:
-            return True
-    if "gif" in locked:
-        if event.gif:
-            return True
-    if "document" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaDocument):
-                if not event.media.document.mime_type in [
-                    "image/webp",
-                    "application/x-tgsticker",
-                    "image/jpeg",
-                    "audio/ogg",
-                    "audio/m4a",
-                    "audio/mp3",
-                    "video/mp4",
-                ]:
-                    return True
-    if "location" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaGeo) or isinstance(
-                event.media, MessageMediaGeoLive
-            ):
-                return True
-    if "phone" in locked:
-        if event.message.entities:
-            if isinstance(event.message.entities[0], MessageEntityPhone):
-                return True
-    if "email" in locked:
-        if event.message.entities:
-            if isinstance(event.message.entities[0], MessageEntityEmail):
-                return True
-    if "command" in locked:
-        if event.message.entities:
-            if isinstance(event.message.entities[0], MessageEntityBotCommand):
-                return True
-    if "url" in locked:
-        if event.message.entities:
-            if isinstance(event.message.entities[0], MessageEntityUrl):
-                return True
-    if "invitelink" in locked:
-        if event.text:
-            if "t.me/" in event.text:
-                return True
-    if "poll" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaPoll):
-                return True
-    if "photo" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaPhoto):
-                return True
-    if "videonote" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaDocument):
-                if event.media.document.mime_type == "video/mp4":
-                    return True
-    if "video" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaDocument):
-                if isinstance(
-                    event.media.document.attributes[0], DocumentAttributeVideo
-                ):
-                    return True
-    if "voice" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaDocument):
-                if isinstance(
-                    event.media.document.attributes[0], DocumentAttributeAudio
-                ):
-                    if event.media.document.attributes[0].voice:
-                        return True
-    if "audio" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaDocument):
-                if isinstance(
-                    event.media.document.attributes[0], DocumentAttributeAudio
-                ):
-                    return True
-    if "bot" in locked:
-        if event.sender.bot:
-            return True
-    if "button" in locked:
-        if event.reply_markup:
-            return True
-    if "game" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaGame):
-                return True
-    if "contact" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaDice):
-                return True
-    if "forward" in locked:
-        if event.fwd_from:
-            return True
-    if "emojigame" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaDice):
-                return True
-    if "forwardchannel" in locked:
-        if event.fwd_from:
-            if event.fwd_from.from_id:
-                if isinstance(event.fwd_from.from_id, PeerChannel) or isinstance(
-                    event.fwd_from.from_id, Channel
-                ):
-                    return True
-    if "forwarduser" in locked:
-        if event.fwd_from:
-            if event.fwd_from.from_id:
-                if isinstance(event.fwd_from.from_id, PeerUser):
-                    return True
-    if "preview" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaWebPage):
-                return True
-    if "forwardbot" in locked:
-        if event.fwd_from:
-            if event.fwd_from.from_id:
-                if event.sender.bot:
-                    return True
-    if "invoice" in locked:
-        if event.media:
-            if isinstance(event.media, MessageMediaInvoice):
-                return True
+    if "sticker" in locked and event.sticker:
+        return True
+    if "gif" in locked and event.gif:
+        return True
+    if (
+        "document" in locked
+        and event.media
+        and isinstance(event.media, MessageMediaDocument)
+        and event.media.document.mime_type
+        not in [
+            "image/webp",
+            "application/x-tgsticker",
+            "image/jpeg",
+            "audio/ogg",
+            "audio/m4a",
+            "audio/mp3",
+            "video/mp4",
+        ]
+    ):
+        return True
+    if (
+        "location" in locked
+        and event.media
+        and isinstance(event.media, (MessageMediaGeo, MessageMediaGeoLive))
+    ):
+        return True
+    if (
+        "phone" in locked
+        and event.message.entities
+        and isinstance(event.message.entities[0], MessageEntityPhone)
+    ):
+        return True
+    if (
+        "email" in locked
+        and event.message.entities
+        and isinstance(event.message.entities[0], MessageEntityEmail)
+    ):
+        return True
+    if (
+        "command" in locked
+        and event.message.entities
+        and isinstance(event.message.entities[0], MessageEntityBotCommand)
+    ):
+        return True
+    if (
+        "url" in locked
+        and event.message.entities
+        and isinstance(event.message.entities[0], MessageEntityUrl)
+    ):
+        return True
+    if "invitelink" in locked and event.text and "t.me/" in event.text:
+        return True
+    if (
+        "poll" in locked
+        and event.media
+        and isinstance(event.media, MessageMediaPoll)
+    ):
+        return True
+    if (
+        "photo" in locked
+        and event.media
+        and isinstance(event.media, MessageMediaPhoto)
+    ):
+        return True
+    if (
+        "videonote" in locked
+        and event.media
+        and isinstance(event.media, MessageMediaDocument)
+        and event.media.document.mime_type == "video/mp4"
+    ):
+        return True
+    if (
+        "video" in locked
+        and event.media
+        and isinstance(event.media, MessageMediaDocument)
+        and isinstance(
+            event.media.document.attributes[0], DocumentAttributeVideo
+        )
+    ):
+        return True
+    if (
+        "voice" in locked
+        and event.media
+        and isinstance(event.media, MessageMediaDocument)
+        and isinstance(
+            event.media.document.attributes[0], DocumentAttributeAudio
+        )
+        and event.media.document.attributes[0].voice
+    ):
+        return True
+    if (
+        "audio" in locked
+        and event.media
+        and isinstance(event.media, MessageMediaDocument)
+        and isinstance(
+            event.media.document.attributes[0], DocumentAttributeAudio
+        )
+    ):
+        return True
+    if "bot" in locked and event.sender.bot:
+        return True
+    if "button" in locked and event.reply_markup:
+        return True
+    if (
+        "game" in locked
+        and event.media
+        and isinstance(event.media, MessageMediaGame)
+    ):
+        return True
+    if (
+        "contact" in locked
+        and event.media
+        and isinstance(event.media, MessageMediaDice)
+    ):
+        return True
+    if "forward" in locked and event.fwd_from:
+        return True
+    if (
+        "emojigame" in locked
+        and event.media
+        and isinstance(event.media, MessageMediaDice)
+    ):
+        return True
+    if (
+        "forwardchannel" in locked
+        and event.fwd_from
+        and event.fwd_from.from_id
+        and isinstance(event.fwd_from.from_id, (PeerChannel, Channel))
+    ):
+        return True
+    if (
+        "forwarduser" in locked
+        and event.fwd_from
+        and event.fwd_from.from_id
+        and isinstance(event.fwd_from.from_id, PeerUser)
+    ):
+        return True
+    if (
+        "preview" in locked
+        and event.media
+        and isinstance(event.media, MessageMediaWebPage)
+    ):
+        return True
+    if (
+        "forwardbot" in locked
+        and event.fwd_from
+        and event.fwd_from.from_id
+        and event.sender.bot
+    ):
+        return True
+    if (
+        "invoice" in locked
+        and event.media
+        and isinstance(event.media, MessageMediaInvoice)
+    ):
+        return True
     if "comment" in locked:
         return False
-    if "card" in locked:
-        if event.message.entities:
-            for x in range(len(event.message.entities)):
-                if isinstance(event.message.entities[x], MessageEntityBankCard):
-                    return True
+    if "card" in locked and event.message.entities:
+        for x in range(len(event.message.entities)):
+            if isinstance(event.message.entities[x], MessageEntityBankCard):
+                return True
     return False
 
 
@@ -354,19 +374,17 @@ async def album(e):
         return
     if not isinstance(e.sender, User):
         return
-    if e.chat.admin_rights:
-        if not e.chat.admin_rights.delete_messages:
-            return
-    else:
+    if not e.chat.admin_rights:
+        return
+    if not e.chat.admin_rights.delete_messages:
         return
     if approve_d.find_one({"user_id": e.sender_id, "chat_id": e.chat_id}):
         return
     locked = db.get_locks(e.chat_id)
     if not locked or len(locked) == 0:
         return
-    if "album" in locked:
-        if not await is_admin(e.chat_id, e.sender_id):
-            await e.delete()
+    if "album" in locked and not await is_admin(e.chat_id, e.sender_id):
+        await e.delete()
 
 
 __name__ = "locks"

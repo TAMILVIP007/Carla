@@ -60,7 +60,7 @@ async def kang(event):
             emoji = msg.media.document.attributes[1].alt
         except:
             emoji = "😂"
-    if emoji == "":
+    if not emoji:
         emoji = random.choice(["😍", "😂", "🙅‍♀️"])
     if msg.sticker:
         mime_type = msg.media.document.mime_type
@@ -171,16 +171,15 @@ async def unkang__own_sticker(e):
     file_reference = r.media.document.file_reference
     pack_id = None
     for x in r.document.attributes:
-        if isinstance(x, DocumentAttributeSticker):
-            if x.stickerset:
-                pack_id = x.stickerset.id
+        if isinstance(x, DocumentAttributeSticker) and x.stickerset:
+            pack_id = x.stickerset.id
     if not pack_id:
         return await e.reply(
             "That sticker doesn't belong to any pack, then what's the point of unkanging it?"
         )
     if e.sender_id != OWNER_ID:
         px = sticker_sets.find_one({"sticker_id": pack_id})
-        if px == None or px.get("id") != e.sender_id:
+        if px is None or px.get("id") != e.sender_id:
             return await e.reply("That Sticker pack is not yours to Unkang!")
     try:
         result = await tbot(
@@ -245,10 +244,11 @@ async def pck_kang__(e):
         emoji = None
     id = access_hash = None
     for x in r.sticker.attributes:
-        if isinstance(x, DocumentAttributeSticker):
-            if not isinstance(x.stickerset, InputStickerSetEmpty):
-                id = x.stickerset.id
-                access_hash = x.stickerset.access_hash
+        if isinstance(x, DocumentAttributeSticker) and not isinstance(
+            x.stickerset, InputStickerSetEmpty
+        ):
+            id = x.stickerset.id
+            access_hash = x.stickerset.access_hash
     if not (id or access_hash):
         return await e.reply("That sticker is not part of any pack to kang!")
     _stickers = await tbot(
@@ -282,8 +282,7 @@ async def pck_kang__(e):
                 )
             )
     pack = 1
-    xp = pkang.find_one({"user_id": e.sender_id})
-    if xp:
+    if xp := pkang.find_one({"user_id": e.sender_id}):
         pack = xp.get("pack") + 1
     pkang.update_one({"user_id": e.sender_id}, {"$set": {"pack": pack}}, upsert=True)
     pm = random.choice(

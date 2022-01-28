@@ -166,12 +166,8 @@ async def qoutly_api(e):
                         "width": msg.file.width,
                     }
                 ]
-            else:
-                pass
             if msg.text:
                 msg.text
-            else:
-                pass
             data = {
                 "type": "quote",
                 "backgroundColor": color,

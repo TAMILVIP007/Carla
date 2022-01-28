@@ -319,8 +319,7 @@ def remove_lock(
 
 
 def get_chat_locks(chat_id):
-    curr = SESSION.query(LOCKS).get(str(chat_id))
-    if curr:
+    if curr := SESSION.query(LOCKS).get(str(chat_id)):
         return curr
     return LOCKS(
         chat_id,

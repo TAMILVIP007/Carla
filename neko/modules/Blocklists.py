@@ -88,8 +88,7 @@ async def _(event):
     args = event.pattern_match.group(2)
     if not args:
         return await event.reply("You need to specify the blocklist filter to remove")
-    d = db.rm_from_blacklist(event.chat_id, args)
-    if d:
+    if d := db.rm_from_blacklist(event.chat_id, args):
         text = "I will no longer blocklist '{}'.".format(args)
     else:
         text = f"`{args}` has not been blocklisted, and so could not be stopped. Use the /blocklist command to see the current blocklist."
@@ -143,28 +142,18 @@ async def _(event):
         return  # connect
     if not await can_change_info(event, event.sender_id):
         return
-    args = event.pattern_match.group(2)
-    if not args:
-        mode, time = db.get_mode(event.chat_id)
-        if mode == "nothing":
-            text = "Your current blocklist preference is just to delete messages with blocklisted words."
-        elif mode == "warn":
-            text = "Your current blocklist preference is to warn users on messages containing blocklisted words, and delete the message."
-        elif mode == "ban":
-            text = "Your current blocklist preference is to ban users on messages containing blocklisted words, and delete the message."
-        elif mode == "mute":
-            text = "Your current blocklist preference is to mute users on messages containing blocklisted words, and delete the message."
-        elif mode == "kick":
-            text = "Your current blocklist preference is to kick users on messages containing blocklisted words, and delete the message."
-        elif mode == "tban":
-            text = "Your current blocklist preference is to tban users on messages containing blocklisted words, and delete the message."
-        elif mode == "tmute":
-            text = "Your current blocklist preference is to tmute users on messages containing blocklisted words, and delete the message."
-        await event.reply(text + addon)
-    else:
+    if args := event.pattern_match.group(2):
         lolz = args
         args = args.split()
-        if not args[0] in ["ban", "mute", "kick", "tban", "tmute", "nothing", "warn"]:
+        if args[0] not in [
+            "ban",
+            "mute",
+            "kick",
+            "tban",
+            "tmute",
+            "nothing",
+            "warn",
+        ]:
             return await event.reply(
                 f"Unknown type {args[0]}. Please use one of: nothing/ban/mute/kick/warn/tban/tmute"
             )
@@ -181,6 +170,23 @@ async def _(event):
             db.set_mode(event.chat_id, args[0])
             text = f"Changed blacklist mode: {args[0]} the sender!"
         await event.reply(text)
+    else:
+        mode, time = db.get_mode(event.chat_id)
+        if mode == "ban":
+            text = "Your current blocklist preference is to ban users on messages containing blocklisted words, and delete the message."
+        elif mode == "kick":
+            text = "Your current blocklist preference is to kick users on messages containing blocklisted words, and delete the message."
+        elif mode == "mute":
+            text = "Your current blocklist preference is to mute users on messages containing blocklisted words, and delete the message."
+        elif mode == "nothing":
+            text = "Your current blocklist preference is just to delete messages with blocklisted words."
+        elif mode == "tban":
+            text = "Your current blocklist preference is to tban users on messages containing blocklisted words, and delete the message."
+        elif mode == "tmute":
+            text = "Your current blocklist preference is to tmute users on messages containing blocklisted words, and delete the message."
+        elif mode == "warn":
+            text = "Your current blocklist preference is to warn users on messages containing blocklisted words, and delete the message."
+        await event.reply(text + addon)
 
 
 @tbot.on(events.NewMessage(incoming=True))

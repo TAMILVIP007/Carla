@@ -28,9 +28,6 @@ def add_ad(chat_id: str, mode):
 
 def ad_settings(chat_id: str):
     try:
-        s__ = SESSION.query(AD).get(str(chat_id))
-        if s__:
-            return s__.mode
-        return False
+        return s__.mode if (s__ := SESSION.query(AD).get(str(chat_id))) else False
     finally:
         SESSION.close()

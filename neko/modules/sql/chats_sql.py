@@ -21,8 +21,7 @@ def add_chat(chat_id: str):
 
 
 def rmchat(chat_id: str):
-    rmnightmoddy = SESSION.query(Chats).get(str(chat_id))
-    if rmnightmoddy:
+    if rmnightmoddy := SESSION.query(Chats).get(str(chat_id)):
         SESSION.delete(rmnightmoddy)
         SESSION.commit()
 
@@ -35,8 +34,7 @@ def get_all_chat_id():
 
 def is_chat(chat_id: str):
     try:
-        s__ = SESSION.query(Chats).get(str(chat_id))
-        if s__:
+        if s__ := SESSION.query(Chats).get(str(chat_id)):
             return str(s__.chat_id)
     finally:
         SESSION.close()

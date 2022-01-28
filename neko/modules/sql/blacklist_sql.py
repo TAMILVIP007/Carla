@@ -96,10 +96,10 @@ def add_mode(chat_id, mode):
 
 
 def get_mode(chat_id):
-    rules = SESSION.query(BlackListMode).get(str(chat_id))
-    ret = "nothing"
-    if rules:
+    if rules := SESSION.query(BlackListMode).get(str(chat_id)):
         ret = rules.mode
+    else:
+        ret = "nothing"
     SESSION.close()
     return ret
 
@@ -113,18 +113,19 @@ def set_time(chat_id, time):
 
 
 def get_time(chat_id):
-    rules = SESSION.query(BlackListMode).get(str(chat_id))
-    ret = 0
-    if rules:
+    if rules := SESSION.query(BlackListMode).get(str(chat_id)):
         ret = rules.time
+    else:
+        ret = 0
     SESSION.close()
     return ret
 
 
 def rm_from_blacklist(chat_id, trigger):
     with BLACKLIST_FILTER_INSERTION_LOCK:
-        blacklist_filt = SESSION.query(BlackListFilters).get((str(chat_id), trigger))
-        if blacklist_filt:
+        if blacklist_filt := SESSION.query(BlackListFilters).get(
+            (str(chat_id), trigger)
+        ):
             # sanity check
             if trigger in CHAT_BLACKLISTS.get(str(chat_id), set()):
                 CHAT_BLACKLISTS.get(str(chat_id), set()).remove(trigger)
@@ -139,10 +140,9 @@ def rm_from_blacklist(chat_id, trigger):
 
 def remove_all_blacklist(chat_id):
     with BLACKLIST_FILTER_INSERTION_LOCK:
-        saved_bl = SESSION.query(BlackListFilters).filter(
+        if saved_bl := SESSION.query(BlackListFilters).filter(
             BlackListFilters.chat_id == str(chat_id)
-        )
-        if saved_bl:
+        ):
             saved_bl.delete()
             SESSION.commit()
             CHAT_BLACKLISTS.pop(str(chat_id))
@@ -150,8 +150,9 @@ def remove_all_blacklist(chat_id):
 
 def rm_sticker(chat_id, sticker):
     with BLACKLIST_FILTER_INSERTION_LOCK:
-        blacklist_filt = SESSION.query(BlSticker).get((str(chat_id), sticker))
-        if blacklist_filt:
+        if blacklist_filt := SESSION.query(BlSticker).get(
+            (str(chat_id), sticker)
+        ):
             # sanity check
             if sticker in CHAT_STICKER.get(str(chat_id), set()):
                 CHAT_STICKER.get(str(chat_id), set()).remove(sticker)

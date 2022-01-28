@@ -89,8 +89,7 @@ def remove_warn(user_id, chat_id):
 
 def reset_warns(user_id, chat_id):
     with WARN_INSERTION_LOCK:
-        warned_user = SESSION.query(Warns).get((user_id, str(chat_id)))
-        if warned_user:
+        if warned_user := SESSION.query(Warns).get((user_id, str(chat_id))):
             warned_user.num_warns = 0
             warned_user.reasons = ""
 
@@ -149,8 +148,7 @@ def set_warn_strength(chat_id, soft_warn):
 
 def get_warn_strength(chat_id):
     try:
-        setting = SESSION.query(WarnSettings).get(str(chat_id))
-        if setting:
+        if setting := SESSION.query(WarnSettings).get(str(chat_id)):
             return setting.soft_warn
         return "ban"
     finally:
@@ -159,8 +157,7 @@ def get_warn_strength(chat_id):
 
 def get_limit(chat_id):
     try:
-        setting = SESSION.query(WarnSettings).get(str(chat_id))
-        if setting:
+        if setting := SESSION.query(WarnSettings).get(str(chat_id)):
             return setting.warn_limit
         return 3
 
@@ -170,8 +167,7 @@ def get_limit(chat_id):
 
 def get_warn_setting(chat_id):
     try:
-        setting = SESSION.query(WarnSettings).get(str(chat_id))
-        if setting:
+        if setting := SESSION.query(WarnSettings).get(str(chat_id)):
             return setting.warn_limit, setting.soft_warn
         return 3, "ban"
 
@@ -181,8 +177,7 @@ def get_warn_setting(chat_id):
 
 def get_ban_time(chat_id):
     try:
-        setting = SESSION.query(WarnSettings).get(str(chat_id))
-        if setting:
+        if setting := SESSION.query(WarnSettings).get(str(chat_id)):
             return setting.mute_time
         return 3600
 
@@ -205,7 +200,6 @@ def num_warn_chats():
 
 
 def reset_all_warns(chat_id):
-    warns = SESSION.query(Warns).filter(Warns.chat_id == str(chat_id))
-    if warns:
+    if warns := SESSION.query(Warns).filter(Warns.chat_id == str(chat_id)):
         warns.delete()
         SESSION.commit()

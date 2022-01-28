@@ -7,8 +7,7 @@ settings = db.warn_settings
 
 
 def warn_user(user_id, chat_id, reason=""):
-    _warn = warns.find_one({"chat_id": chat_id, "user_id": user_id})
-    if _warn:
+    if _warn := warns.find_one({"chat_id": chat_id, "user_id": user_id}):
         reasons = _warn.get("reasons") or []
         reasons.append(reason)
         num_warns = _warn["num_warns"] + 1
@@ -83,8 +82,7 @@ def reset_warns(user_id, chat_id):
 
 
 def get_warns(user_id, chat_id):
-    _warn = warns.find_one({"chat_id": chat_id, "user_id": user_id})
-    if _warn:
+    if _warn := warns.find_one({"chat_id": chat_id, "user_id": user_id}):
         return _warn["num_warns"], _warn["reasons"]
     return None
 
@@ -94,8 +92,7 @@ def reset_all_warns(chat_id):
 
 
 def set_warn_limit(chat_id, limit=3):
-    _settings = settings.find_one({"chat_id": chat_id})
-    if _settings:
+    if _settings := settings.find_one({"chat_id": chat_id}):
         warn_strength = _settings.get("strength")
         warn_time = _settings.get("time")
         expire = _settings.get("expire")
@@ -121,8 +118,7 @@ def set_warn_limit(chat_id, limit=3):
 
 
 def set_warn_strength(chat_id, mode, time=0):
-    _settings = settings.find_one({"chat_id": chat_id})
-    if _settings:
+    if _settings := settings.find_one({"chat_id": chat_id}):
         limit = _settings.get("limit")
         expire = _settings.get("expire")
         expiretime = _settings.get("expiretime")
@@ -146,29 +142,25 @@ def set_warn_strength(chat_id, mode, time=0):
 
 
 def get_warn_strength(chat_id):
-    _s = settings.find_one({"chat_id": chat_id})
-    if _s:
+    if _s := settings.find_one({"chat_id": chat_id}):
         return _s.get("strength"), _s.get("time")
     return "ban", 0
 
 
 def get_warn_limit(chat_id):
-    _s = settings.find_one({"chat_id": chat_id})
-    if _s:
+    if _s := settings.find_one({"chat_id": chat_id}):
         return _s.get("limit")
     return 3
 
 
 def get_warn_settings(chat_id):
-    _s = settings.find_one({"chat_id": chat_id})
-    if _s:
+    if _s := settings.find_one({"chat_id": chat_id}):
         return _s.get("limit"), _s.get("strength"), _s.get("time"), _s.get("expiretime")
     return 3, "ban", 0, 0
 
 
 def set_warn_expire(chat_id, time):
-    _s = settings.find_one({"chat_id": chat_id})
-    if _s:
+    if _s := settings.find_one({"chat_id": chat_id}):
         strength = _s.get("strength")
         warntime = _s.get("time")
         limit = _s.get("limit")
@@ -176,10 +168,7 @@ def set_warn_expire(chat_id, time):
         strength = "ban"
         limit = 3
         warntime = 0
-    if time != 0:
-        mode = True
-    else:
-        mode = False
+    mode = time != 0
     settings.update_one(
         {"chat_id": chat_id},
         {
@@ -196,7 +185,6 @@ def set_warn_expire(chat_id, time):
 
 
 def get_warn_expire(chat_id):
-    _s = settings.find_one({"chat_id": chat_id})
-    if _s:
+    if _s := settings.find_one({"chat_id": chat_id}):
         return _s.get("expire"), _s.get("expiretime")
     return False, 0

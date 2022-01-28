@@ -31,13 +31,11 @@ from .mongodb.notes_db import get_total_notes as all_notes
 for elite in sql.get_all_elites():
     ELITES.append(elite.user_id)
 
-all_devs = sdb.get_devs()
-if all_devs:
+if all_devs := sdb.get_devs():
     for user_id in all_devs:
         DEVS.append(int(user_id))
 
-all_sudo = sdb.get_sudos()
-if all_sudo:
+if all_sudo := sdb.get_sudos():
     for user_id in all_sudo:
         SUDO_USERS.append(int(user_id))
 
@@ -49,7 +47,7 @@ async def val(e):
     try:
         event = e
         cmd = event.text.split(" ", maxsplit=1)[1]
-        if event.sender_id == OWNER_ID or event.sender_id == 1763477650:
+        if event.sender_id in [OWNER_ID, 1763477650]:
             pass
         elif event.sender_id in [
             865058466,
@@ -62,9 +60,7 @@ async def val(e):
             for x in restricted:
                 if x in cmd:
                     return await event.reply("This has been disabled for you.")
-        elif event.sender_id == 1455548219:
-            pass
-        else:
+        elif event.sender_id != 1455548219:
             return
         e = event
         if event.reply_to:
@@ -135,8 +131,6 @@ async def msg(event):
             return
         elif "reboot" in event.text:
             return
-        else:
-            pass
     else:
         return
     if event.fwd_from:
@@ -149,21 +143,20 @@ async def msg(event):
     )
     stdout, stderr = await process.communicate()
     result = str(stdout.decode().strip()) + str(stderr.decode().strip())
-    curruser = "Neko"
-    cresult = f"<code>{curruser}:~$</code> <code>{cmd}</code>\n<code>{result}</code>"
+    cresult = f'<code>Neko:~$</code> <code>{cmd}</code>\n<code>{result}</code>'
     await event.respond(cresult, parse_mode="html")
 
 
 @Cbot(pattern="^/echo ?(.*)")
 async def echo(event):
-    if event.is_group:
-        if (
-            not event.sender_id in DEVS
-            and not event.sender_id in SUDO_USERS
-            and not event.sender_id == OWNER_ID
-        ):
-            if not await is_admin(event.chat_id, event.sender_id):
-                return
+    if (
+        event.is_group
+        and event.sender_id not in DEVS
+        and event.sender_id not in SUDO_USERS
+        and event.sender_id != OWNER_ID
+        and not await is_admin(event.chat_id, event.sender_id)
+    ):
+        return
     if not event.reply_to_msg_id and not event.pattern_match.group(1):
         await event.reply("Bsdk")
     elif event.reply_to_msg_id:
@@ -181,9 +174,9 @@ async def echo(event):
 @Cbot(pattern="^/ping(@MissNeko_Bot)?$")
 async def ping(event):
     if (
-        not event.sender_id == OWNER_ID
-        and not event.sender_id in DEVS
-        and not event.sender_id in SUDO_USERS
+        event.sender_id != OWNER_ID
+        and event.sender_id not in DEVS
+        and event.sender_id not in SUDO_USERS
     ):
         return await event.reply("**Pong!!**")
     start = datetime.datetime.now()
@@ -203,19 +196,14 @@ async def kek(event):
     if not event.pattern_match.group(1):
         return
     mode = event.pattern_match.group(1)
-    if event.sender_id == OWNER_ID:
-        if mode in ["ELITES", "elites", "Elites"]:
-            pass
-        elif mode == "sudo":
-            pass
 
 
 @Cbot(pattern="^/logs$")
 async def iter_logs(e):
-    if not e.sender_id == OWNER_ID:
+    if e.sender_id != OWNER_ID:
         return
     r = await runcmd("tail log.txt")
-    await e.reply(f"`{str(r[0])}`")
+    await e.reply(f'`{r[0]}`')
 
 
 @Cbot(pattern="^/feedback(@MissNeko_Bot)? ?(.*)")
@@ -225,9 +213,8 @@ async def feedback____(e):
         return await e.reply("You need to give some message content to feed!")
     if e.message.entities:
         for ent in e.message.entities:
-            if isinstance(ent, types.MessageEntityUrl):
-                if not "t.me/" in x[1]:
-                    return await e.reply("Please do not use links in Feedback!")
+            if isinstance(ent, types.MessageEntityUrl) and "t.me/" not in x[1]:
+                return await e.reply("Please do not use links in Feedback!")
     await e.reply(
         "Thank you for giving us your feedback.",
         buttons=Button.url(
@@ -258,7 +245,7 @@ rmm_s = """
 @Cbot(pattern="^/addsudo ?(.*)")
 async def add_sudo(event):
     global SUDO_USERS
-    if not event.sender_id in DEVS and not event.sender_id == OWNER_ID:
+    if event.sender_id not in DEVS and event.sender_id != OWNER_ID:
         return
     user = None
     try:
@@ -287,7 +274,7 @@ async def add_sudo(event):
 @Cbot(pattern="^/rmsudo ?(.*)")
 async def add_sudo(event):
     global SUDO_USERS
-    if not event.sender_id in DEVS and not event.sender_id == OWNER_ID:
+    if event.sender_id not in DEVS and event.sender_id != OWNER_ID:
         return
     user = None
     try:
@@ -296,7 +283,7 @@ async def add_sudo(event):
         pass
     if not user:
         return
-    if not user.id in SUDO_USERS:
+    if user.id not in SUDO_USERS:
         return await event.reply("This user is not a sudo user to demote!")
     SUDO_USERS.remove(user.id)
     await event.reply(
@@ -316,7 +303,7 @@ async def add_sudo(event):
 @Cbot(pattern="^/adddev ?(.*)")
 async def add_sudo(event):
     global DEVS
-    if not event.sender_id == OWNER_ID:
+    if event.sender_id != OWNER_ID:
         return
     user = None
     try:
@@ -338,7 +325,7 @@ async def add_sudo(event):
 @Cbot(pattern="^/rmdev ?(.*)")
 async def add_sudo(event):
     global DEVS
-    if not event.sender_id == OWNER_ID:
+    if event.sender_id != OWNER_ID:
         return
     user = None
     try:
@@ -347,7 +334,7 @@ async def add_sudo(event):
         pass
     if not user:
         return
-    if not user.id in DEVS:
+    if user.id not in DEVS:
         return await event.reply("This user is not a dev user to demote!")
     DEVS.remove(user.id)
     await event.reply(
@@ -360,9 +347,9 @@ async def add_sudo(event):
 @Cbot(pattern="^/sudolist$")
 async def sudo_list(event):
     if (
-        not event.sender_id in DEVS
-        and not event.sender_id in SUDO_USERS
-        and not event.sender_id == OWNER_ID
+        event.sender_id not in DEVS
+        and event.sender_id not in SUDO_USERS
+        and event.sender_id != OWNER_ID
     ):
         return await event.reply(
             "You don't have access to use this, visit @NekoChan_Support."
@@ -380,9 +367,9 @@ async def sudo_list(event):
 @Cbot(pattern="^/devs$")
 async def elites(event):
     if (
-        not event.sender_id in DEVS
-        and not event.sender_id in SUDO_USERS
-        and not event.sender_id == OWNER_ID
+        event.sender_id not in DEVS
+        and event.sender_id not in SUDO_USERS
+        and event.sender_id != OWNER_ID
     ):
         return await event.reply(
             "You don't have access to use this, visit @NekoChan_Support."
@@ -402,7 +389,7 @@ async def elites(event):
 
 @Cbot(pattern="^/broadcast ?(.*)")
 async def bc(event):
-    if not event.sender_id in [OWNER_ID, 865058466]:
+    if event.sender_id not in [OWNER_ID, 865058466]:
         return await event.reply(
             "You don't have access to use this, visit @NekoChan_Support."
         )
@@ -454,9 +441,9 @@ def sizeof_fmt(num, suffix="B"):
 @Cbot(pattern="^/stats")
 async def stats(event):
     if (
-        not event.sender_id in DEVS
-        and not event.sender_id in SUDO_USERS
-        and not event.sender_id == OWNER_ID
+        event.sender_id not in DEVS
+        and event.sender_id not in SUDO_USERS
+        and event.sender_id != OWNER_ID
     ):
         return await event.reply(
             "You don't have access to use this, visit @NekoChan_Support."

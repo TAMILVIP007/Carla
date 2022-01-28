@@ -17,14 +17,10 @@ def Cbot(**args):
 
     def decorator(func):
         async def wrapper(check):
-            if check.sender_id and check.sender_id != OWNER_ID:
-                pass
             try:
                 await func(check)
             except BaseException:
                 return
-            else:
-                pass
 
         tbot.add_event_handler(wrapper, events.NewMessage(**args))
         return wrapper

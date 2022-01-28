@@ -21,8 +21,7 @@ all_locks = lock_1 + lock_2 + lock_3 + lock_4 + lock_5
 
 
 def add_lock(chat_id, type):
-    _locks = locks.find_one({"chat_id": chat_id})
-    if _locks:
+    if _locks := locks.find_one({"chat_id": chat_id}):
         _lock = _locks["locked"]
     else:
         _lock = []
@@ -32,15 +31,13 @@ def add_lock(chat_id, type):
 
 
 def get_locks(chat_id):
-    _locks = locks.find_one({"chat_id": chat_id})
-    if _locks:
+    if _locks := locks.find_one({"chat_id": chat_id}):
         return _locks["locked"]
     return None
 
 
 def remove_lock(chat_id, type):
-    _locks = locks.find_one({"chat_id": chat_id})
-    if _locks:
+    if _locks := locks.find_one({"chat_id": chat_id}):
         _lock = _locks["locked"]
     else:
         return

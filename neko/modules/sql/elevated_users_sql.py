@@ -38,8 +38,7 @@ def add_sudo(user_id, first_name):
 
 
 def remove_sudo(user_id):
-    sudo = SESSION.query(SUDO).get(str(user_id))
-    if sudo:
+    if sudo := SESSION.query(SUDO).get(str(user_id)):
         SESSION.delete(sudo)
         SESSION.commit()
         return True
@@ -66,8 +65,7 @@ def add_elite(user_id, first_name):
 
 
 def remove_elite(user_id):
-    sudo = SESSION.query(ELITE).get(str(user_id))
-    if sudo:
+    if sudo := SESSION.query(ELITE).get(str(user_id)):
         SESSION.delete(sudo)
         SESSION.commit()
         return True

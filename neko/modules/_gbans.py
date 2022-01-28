@@ -82,12 +82,7 @@ gbanned_acc = """
 
 
 def antispam_chats():
-    aspp = []
-    for p in list(asp.find()):
-        aspp.append(p.get("chat_id"))
-    if aspp:
-        return aspp
-    return None
+    return aspp if (aspp := [p.get("chat_id") for p in list(asp.find())]) else None
 
 
 ADMINS = SUDO_USERS + DEVS
@@ -109,9 +104,9 @@ CODES = {
 @Cbot(pattern="^/gban ?(.*)")
 async def gban(event):
     if (
-        not event.sender_id in SUDO_USERS
-        and not event.sender_id in DEVS
-        and not event.sender_id == OWNER_ID
+        event.sender_id not in SUDO_USERS
+        and event.sender_id not in DEVS
+        and event.sender_id != OWNER_ID
     ):
         return
     if not event.reply_to_msg_id and not event.pattern_match.group(1):
@@ -120,15 +115,13 @@ async def gban(event):
         )
     user = None
     reason = None
-    cb_reason = "[NC-N]"
     try:
         user, reason = await get_user(event)
     except TypeError:
         pass
     if not user:
         return
-    if reason:
-        cb_reason = reason[:6]
+    cb_reason = reason[:6] if reason else "[NC-N]"
     if isinstance(user, Channel):
         return await event.reply(
             "That's a channel/chat you idiot!!, pass a User object."
@@ -231,7 +224,7 @@ async def gban(event):
 
 @tbot.on(events.CallbackQuery(pattern=r"gban(\_(.*))"))
 async def cb_gban(event):
-    if not event.sender_id == OWNER_ID and not event.sender_id in DEVS:
+    if event.sender_id != OWNER_ID and event.sender_id not in DEVS:
         return await event.answer("You don't have access to use this!", alert=True)
     cb_data = (((event.pattern_match.group(1)).decode()).split("_")[1]).split("|", 3)
     banner_id = int(cb_data[0])
@@ -298,7 +291,7 @@ async def cb_gban(event):
 
 @tbot.on(events.CallbackQuery(pattern=r"rgban(\_(.*))"))
 async def cb_gban(event):
-    if not event.sender_id == OWNER_ID and not event.sender_id in DEVS:
+    if event.sender_id != OWNER_ID and event.sender_id not in DEVS:
         return await event.answer("You don't have access to use this!", alert=True)
     cb_data = (((event.pattern_match.group(1)).decode()).split("_")[1]).split("|", 3)
     banner_id = int(cb_data[0])
@@ -326,9 +319,9 @@ async def cb_gban(event):
 @Cbot(pattern="^/ungban ?(.*)")
 async def ungban(event):
     if (
-        not event.sender_id in DEVS
-        and not event.sender_id in SUDO_USERS
-        and not event.sender_id == OWNER_ID
+        event.sender_id not in DEVS
+        and event.sender_id not in SUDO_USERS
+        and event.sender_id != OWNER_ID
     ):
         return
     if not event.reply_to_msg_id and not event.pattern_match.group(1):
@@ -337,19 +330,16 @@ async def ungban(event):
         )
     user = None
     reason = None
-    cb_reason = "[NC-N]"
     try:
         user, reason = await get_user(event)
     except TypeError:
         pass
     if not user:
         return
-    if reason:
-        cb_reason = reason[:6]
+    cb_reason = reason[:6] if reason else "[NC-N]"
     if user.id in ADMINS:
         return await event.reply("I'm sorry, but you can't unban other bot admins.")
-    check = gbanned.find_one({"user": user.id})
-    if check:
+    if check := gbanned.find_one({"user": user.id}):
         banner_id = check["bannerid"]
         await event.reply(
             f"Initiating Regression of global ban on <b><a href='tg://user?id={user.id}'>{user.first_name}</a></b>",
@@ -389,21 +379,23 @@ async def gban_check(event):
         return
     if asp.find_one({"chat_id": event.chat_id}):
         return
-    if gbanned.find_one({"user": event.sender_id}):
-        if event.chat.admin_rights:
-            if event.chat.admin_rights.ban_users:
-                try:
-                    await tbot.edit_permissions(
-                        event.chat_id, event.sender_id, view_messages=False
-                    )
-                except:
-                    return
-                await event.reply(
-                    gbanned_acc.format(
-                        event.sender_id, event.sender.first_name, event.sender_id
-                    ),
-                    parse_mode="html",
-                )
+    if (
+        gbanned.find_one({"user": event.sender_id})
+        and event.chat.admin_rights
+        and event.chat.admin_rights.ban_users
+    ):
+        try:
+            await tbot.edit_permissions(
+                event.chat_id, event.sender_id, view_messages=False
+            )
+        except:
+            return
+        await event.reply(
+            gbanned_acc.format(
+                event.sender_id, event.sender.first_name, event.sender_id
+            ),
+            parse_mode="html",
+        )
 
 
 @tbot.on(events.ChatAction())
@@ -412,19 +404,21 @@ async def gban_check(event):
         return
     if asp.find_one({"chat_id": event.chat_id}):
         return
-    if event.user_joined:
-        if gbanned.find_one({"user": event.user_id}):
-            if event.chat.admin_rights:
-                if event.chat.admin_rights.ban_users:
-                    await event.reply(
-                        gbanned_acc.format(
-                            event.user_id, event.user.first_name, event.user_id
-                        ),
-                        parse_mode="html",
-                    )
-                    await tbot.edit_permissions(
-                        event.chat_id, event.user_id, view_messages=False
-                    )
+    if (
+        event.user_joined
+        and gbanned.find_one({"user": event.user_id})
+        and event.chat.admin_rights
+        and event.chat.admin_rights.ban_users
+    ):
+        await event.reply(
+            gbanned_acc.format(
+                event.user_id, event.user.first_name, event.user_id
+            ),
+            parse_mode="html",
+        )
+        await tbot.edit_permissions(
+            event.chat_id, event.user_id, view_messages=False
+        )
 
 
 antispam = """
@@ -442,10 +436,7 @@ async def gban_trigg(e):
     try:
         q = e.text.split(None, 1)[1]
     except:
-        if asp.find_one({"chat_id": e.chat_id}):
-            mode = False
-        else:
-            mode = True
+        mode = not asp.find_one({"chat_id": e.chat_id})
         return await e.reply(antispam.format(mode))
     if q in ["on", "yes", "enable"]:
         await e.reply(

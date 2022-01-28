@@ -143,7 +143,7 @@ async def _(event):
     args = event.pattern_match.group(1)
     settings = sql.get_time(event.chat_id)
     if not args:
-        if settings == False or settings == 0:
+        if settings in [False, 0]:
             await event.reply(ca_off)
         else:
             synctime = g_time(settings)
@@ -178,12 +178,12 @@ async def _(event):
     args = event.pattern_match.group(1)
     settings = sql.get_time(event.chat_id)
     if not args:
-        if settings == False or settings == 0:
+        if settings in [False, 0]:
             await event.reply(ca_ot)
         else:
             synctime = g_time(settings)
             await event.reply(ca_time.format(synctime))
-    elif args:
+    else:
         if len(args) == 1:
             return await event.reply(caut.format(args))
         time = await extract_time(event, args)
@@ -205,13 +205,7 @@ async def _(event):
         return
     args = event.pattern_match.group(1)
     settings = sql.get_unmute_time(event.chat_id)
-    if not args:
-        if settings == 0 or settings == False:
-            await event.reply(smdd)
-        else:
-            value = g_time(settings)
-            await event.reply(sudd.format(value))
-    elif args:
+    if args:
         if len(args) == 1:
             return await event.reply(caut.format(args))
         time = await extract_time(event, args)
@@ -221,6 +215,11 @@ async def _(event):
             f"I will now mute people for {g_time(time)} when they join - or until they solve the CAPTCHA in the welcome message."
         )
         sql.set_unmute_time(event.chat_id, time)
+    elif settings in [0, False]:
+        await event.reply(smdd)
+    else:
+        value = g_time(settings)
+        await event.reply(sudd.format(value))
 
 
 @Cbot(pattern="^/captchamode ?(.*)")
@@ -232,32 +231,31 @@ async def _(event):
     args = event.pattern_match.group(1)
     settings = sql.get_style(event.chat_id)
     if not args:
-        if settings == False or settings == "button":
+        if settings in [False, "button"]:
             await event.reply(bu_h)
         elif settings == "text":
             await event.reply(tx_h)
         elif settings == "math":
             await event.reply(mt_h)
+    elif args not in ["button", "math", "text"]:
+        await event.reply(
+            f"'{args}' is not a recognised CAPTCHA mode! Try one of: button/math/text"
+        )
     else:
-        if not args in ["button", "math", "text"]:
-            await event.reply(
-                f"'{args}' is not a recognised CAPTCHA mode! Try one of: button/math/text"
-            )
-        else:
-            text = f"CAPTCHA set to **{args}**\n"
-            if args == "button":
-                text += "\nButton CAPTCHAs simply require a user to press a button in their welcome message to confirm they're human."
-            elif args == "math":
-                text += "\nMath CAPTCHAs require the user to solve a basic maths question. Please note that this may discriminate against users with little maths knowledge."
-            elif args == "text":
-                text += "\nText CAPTCHAs require the user to answer a CAPTCHA containing letters and numbers."
-            await event.reply(text)
-            sql.set_style(event.chat_id, args)
+        text = f"CAPTCHA set to **{args}**\n"
+        if args == "button":
+            text += "\nButton CAPTCHAs simply require a user to press a button in their welcome message to confirm they're human."
+        elif args == "math":
+            text += "\nMath CAPTCHAs require the user to solve a basic maths question. Please note that this may discriminate against users with little maths knowledge."
+        elif args == "text":
+            text += "\nText CAPTCHAs require the user to answer a CAPTCHA containing letters and numbers."
+        await event.reply(text)
+        sql.set_style(event.chat_id, args)
 
 
 async def captcha_to_welcome(event, welcome_text, file, buttons, chat_id):
     style = sql.get_style(chat_id)
-    if buttons == None:
+    if buttons is None:
         buttons = []
     try:
         await tbot.edit_permissions(chat_id, event.user_id, send_messages=False)
@@ -280,7 +278,7 @@ async def captcha_to_welcome(event, welcome_text, file, buttons, chat_id):
 @Cinline(pattern=r"humanv(\_(.*))")
 async def dcfd_fed(event):
     user_id = int(((event.pattern_match.group(1)).decode()).split("_", 1)[1])
-    if not event.sender_id == user_id:
+    if event.sender_id != user_id:
         return await event.answer(
             "You are the not the user to be verified.", alert=True
         )
@@ -294,11 +292,14 @@ async def dcfd_fed(event):
 @Cbot(pattern="^/start captcha_(.*)")
 async def kek(event):
     chat_id = int(event.pattern_match.group(1))
-    if check.find_one({"chat_id": chat_id, "user_id": event.sender_id}):
-        if (check.find_one({"chat_id": chat_id, "user_id": event.sender_id}))[
+    if (
+        check.find_one({"chat_id": chat_id, "user_id": event.sender_id})
+        and (check.find_one({"chat_id": chat_id, "user_id": event.sender_id}))[
             "passed"
-        ] == True:
-            return await event.reply("You have already completed the captcha!")
+        ]
+        == True
+    ):
+        return await event.reply("You have already completed the captcha!")
     style = sql.get_style(chat_id)
     if style == "math":
         await math_captcha(event, chat_id)
@@ -308,8 +309,7 @@ async def kek(event):
 
 async def text_captcha(event, chat_id):
     captcha_pic, sol, wrong = generate_captcha()
-    ans = []
-    ans.append(sol)
+    ans = [sol]
     for x in wrong:
         ans.append(x)
     shuffle(ans)
@@ -327,10 +327,11 @@ async def text_captcha(event, chat_id):
         upsert=True,
     )
     await event.respond(
-        f"Choose the correct text from the image to get verified, you have 3 chances left!",
+        'Choose the correct text from the image to get verified, you have 3 chances left!',
         file=captcha_pic,
         buttons=btns,
     )
+
     os.remove(captcha_pic)
 
 
@@ -356,10 +357,7 @@ async def txtc(event):
                 btns.append(bt)
                 bt = []
         chance = check.find_one({"chat_id": chat_id, "user_id": event.sender_id})
-        if not chance:
-            chance = 3
-        else:
-            chance = int(chance["chance"]) - 1
+        chance = 3 if not chance else int(chance["chance"]) - 1
         if chance == 0:
             check.update_one(
                 {"chat_id": chat_id, "user_id": event.sender_id},
@@ -399,9 +397,8 @@ async def txtc(event):
 
 async def math_captcha(event, chat_id):
     captcha_pic, solution = gen_captcha("math")
-    ans = []
-    ans.append(solution)
-    for x in range(8):
+    ans = [solution]
+    for _ in range(8):
         ans.append(randint(0, 999))
     shuffle(ans)
     btns = []
@@ -418,7 +415,7 @@ async def math_captcha(event, chat_id):
         upsert=True,
     )
     await event.respond(
-        f"Choose the correct answer to get verified, you have 3 chances left!",
+        'Choose the correct answer to get verified, you have 3 chances left!',
         file=captcha_pic,
         buttons=btns,
     )
@@ -434,7 +431,7 @@ async def txtc(event):
         captcha_pic, solution = gen_captcha("math")
         ans = []
         ans.append(solution)
-        for x in range(8):
+        for _ in range(8):
             ans.append(randint(0, 999))
         shuffle(ans)
         btns = []
@@ -446,10 +443,7 @@ async def txtc(event):
                 btns.append(bt)
                 bt = []
         chance = check.find_one({"chat_id": chat_id, "user_id": event.sender_id})
-        if not chance:
-            chance = 3
-        else:
-            chance = int(chance["chance"]) - 1
+        chance = 3 if not chance else int(chance["chance"]) - 1
         if chance == 0:
             check.update_one(
                 {"chat_id": chat_id, "user_id": event.sender_id},

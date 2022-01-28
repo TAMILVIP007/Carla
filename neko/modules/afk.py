@@ -39,8 +39,7 @@ async def afk(e):
                 "<b>{}</b> is now AFK !".format(e.sender.first_name), parse_mode="html"
             )
             return db.set_afk(e.sender_id, e.sender.first_name, reason)
-    afk = db.get_afk(e.sender_id)
-    if afk:
+    if afk := db.get_afk(e.sender_id):
         xp = get_readable_time(time.time() - int(afk.get("time")))
         await e.reply((random.choice(options)).format(e.sender.first_name, xp))
         db.unset_afk(e.sender_id)
@@ -56,11 +55,8 @@ async def afk_check(e):
     if e.reply_to:
         r = await e.get_reply_message()
         if r:
-            if r.sender:
-                if isinstance(r.sender, User):
-                    user_id = r.sender_id
-                else:
-                    return
+            if r.sender and isinstance(r.sender, User):
+                user_id = r.sender_id
             else:
                 return
     else:
@@ -68,11 +64,9 @@ async def afk_check(e):
             for (ent, txt) in e.get_entities_text():
                 if ent.offset != 0:
                     break
-                if isinstance(ent, MessageEntityMention):
-                    pass
-                elif isinstance(ent, MessageEntityMentionName):
-                    pass
-                else:
+                if not isinstance(
+                    ent, MessageEntityMention
+                ) and not isinstance(ent, MessageEntityMentionName):
                     return
                 a = txt.split()[0]
                 user = await tbot.get_input_entity(a)
@@ -81,10 +75,9 @@ async def afk_check(e):
             return
     if not user_id:
         return
-    if e.sender_id == user_id or not user_id:
+    if e.sender_id == user_id:
         return
-    x_afk = db.get_afk(user_id)
-    if x_afk:
+    if x_afk := db.get_afk(user_id):
         time_seen = get_readable_time(time.time() - int(x_afk["time"]))
         reason = ""
         if x_afk["reason"]:
@@ -114,47 +107,47 @@ DELIMITERS = ("/", ":", "|", "_")
 
 def seperate_sed(sed_string):
     if (
-        len(sed_string) >= 3
-        and sed_string[1] in DELIMITERS
-        and sed_string.count(sed_string[1]) >= 2
+        len(sed_string) < 3
+        or sed_string[1] not in DELIMITERS
+        or sed_string.count(sed_string[1]) < 2
     ):
-        delim = sed_string[1]
-        start = counter = 2
-        while counter < len(sed_string):
-            if sed_string[counter] == "\\":
-                counter += 1
+        return
 
-            elif sed_string[counter] == delim:
-                replace = sed_string[start:counter]
-                counter += 1
-                start = counter
-                break
-
+    delim = sed_string[1]
+    start = counter = 2
+    while counter < len(sed_string):
+        if sed_string[counter] == "\\":
             counter += 1
 
-        else:
-            return None
-        while counter < len(sed_string):
-            if (
-                sed_string[counter] == "\\"
-                and counter + 1 < len(sed_string)
-                and sed_string[counter + 1] == delim
-            ):
-                sed_string = sed_string[:counter] + sed_string[counter + 1 :]
-
-            elif sed_string[counter] == delim:
-                replace_with = sed_string[start:counter]
-                counter += 1
-                break
-
+        elif sed_string[counter] == delim:
+            replace = sed_string[start:counter]
             counter += 1
-        else:
-            return replace, sed_string[start:], ""
+            start = counter
+            break
 
-        flags = ""
-        if counter < len(sed_string):
-            flags = sed_string[counter:]
-        return replace, replace_with, flags.lower()
+        counter += 1
+
+    else:
+        return None
+    while counter < len(sed_string):
+        if (
+            sed_string[counter] == "\\"
+            and counter + 1 < len(sed_string)
+            and sed_string[counter + 1] == delim
+        ):
+            sed_string = sed_string[:counter] + sed_string[counter + 1 :]
+
+        elif sed_string[counter] == delim:
+            replace_with = sed_string[start:counter]
+            counter += 1
+            break
+
+        counter += 1
+    else:
+        return replace, sed_string[start:], ""
+
+    flags = sed_string[counter:] if counter < len(sed_string) else ""
+    return replace, replace_with, flags.lower()
 
 
 @Cbot(pattern=r"^s([/:|_]).*?\1.*")

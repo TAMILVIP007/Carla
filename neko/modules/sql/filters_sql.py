@@ -62,14 +62,14 @@ def add_filter(chat_id, keyword, reply, file=None):
 
 
 def remove_filter(chat_id, keyword):
-    saved_note = SESSION.query(FILTERS).get((str(chat_id), keyword))
-    if saved_note:
+    if saved_note := SESSION.query(FILTERS).get((str(chat_id), keyword)):
         SESSION.delete(saved_note)
         SESSION.commit()
 
 
 def remove_all_filters(chat_id):
-    saved_note = SESSION.query(FILTERS).filter(FILTERS.chat_id == str(chat_id))
-    if saved_note:
+    if saved_note := SESSION.query(FILTERS).filter(
+        FILTERS.chat_id == str(chat_id)
+    ):
         saved_note.delete()
         SESSION.commit()

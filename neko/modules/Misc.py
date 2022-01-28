@@ -70,9 +70,8 @@ async def _(event):
     BASE = "https://webshot.deam.io/{url}?type={type}&quality={quality}&height=1920&width=1080"
     final_url = BASE.format(url=url, type="jpeg", quality=100)
     g = get(final_url)
-    f = open("webss.jpg", "wb")
-    f.write(g.content)
-    f.close()
+    with open("webss.jpg", "wb") as f:
+        f.write(g.content)
     qurl = "https://api.labs.cognitive.microsoft.com/urlpreview/v7.0/search?q={url}"
     headers = {"Ocp-Apim-Subscription-Key": AZURE_API_KEY_URL_PREVIEW}
     r = get(qurl, headers=headers)
@@ -103,13 +102,13 @@ async def aa(event):
     except:
         pass
     skeletal = "User {}'s ID is `{}`."
-    skeletal_fwd = """User {}'s ID is `{}`.
-The forwarded user, {}, has an ID of `{}`"""
-    skeletal_fwd_chat = """User {}'s ID is `{}`.
-The forwarded channel, {}, has an id of `-100{}`."""
     if event.reply_to:
         msg = await event.get_reply_message()
         if msg.fwd_from:
+            skeletal_fwd = """User {}'s ID is `{}`.
+The forwarded user, {}, has an ID of `{}`"""
+            skeletal_fwd_chat = """User {}'s ID is `{}`.
+The forwarded channel, {}, has an id of `-100{}`."""
             if msg.fwd_from.saved_from_peer:
                 if isinstance(msg.fwd_from.saved_from_peer, types.PeerChannel):
                     try:
@@ -163,7 +162,7 @@ async def _info(e):
             return await e.reply(str(x))
     if isinstance(x_user, Channel):
         x_channel = await tbot(GetFullChannelRequest(x_user.username or x_user.id))
-        out_str = f"<b>Channel Info:</b>"
+        out_str = '<b>Channel Info:</b>'
         out_str += f"\n<b>Title:</b> {x_user.title}"
         if x_user.username:
             out_str += f"\n<b>Username:</b> @{x_user.username}"
@@ -204,30 +203,26 @@ async def _info(e):
             out_str += f"\n<b>DC ID:</b> {x_full.profile_photo.dc_id}"
         if x_full.about:
             out_str += f"\n\n<b>Bio:</b> <code>{x_full.about}</code>"
-        x_about = user_about_x.find_one({"user_id": x_full.user.id})
-        if x_about:
+        if x_about := user_about_x.find_one({"user_id": x_full.user.id}):
             out_str += f"\n\n<b>What others Say:</b> <code>{x_about['about']}</code>"
         if x_full.user.id == OWNER_ID:
-            out_str += f"\n\nThis is my Master, he have total power over me!"
+            out_str += '\n\nThis is my Master, he have total power over me!'
         elif x_full.user.id in DEVS:
-            out_str += f"\n\n<b>Status:</b> Commited(Dev)."
+            out_str += '\n\n<b>Status:</b> Commited(Dev).'
         elif x_full.user.id in SUDO_USERS:
-            out_str += f"\n\n<b>Status:</b> Single(sudo)."
+            out_str += '\n\n<b>Status:</b> Single(sudo).'
         if (
-            not x_full.user.id in DEVS
-            and not x_full.user.id in SUDO_USERS
-            and not x_full.user.id == OWNER_ID
-            and not x_full.user.id == BOT_ID
+            x_full.user.id not in DEVS
+            and x_full.user.id not in SUDO_USERS
+            and x_full.user.id != OWNER_ID
+            and x_full.user.id != BOT_ID
         ):
-            if gbanned.find_one({"user": x_full.user.id}):
-                x_gbanned = "Yes"
-            else:
-                x_gbanned = "No"
+            x_gbanned = "Yes" if gbanned.find_one({"user": x_full.user.id}) else "No"
             if x_full.about:
                 out_str += f"\n\n<b>Gbanned:</b> {x_gbanned}"
             else:
                 out_str += f"\n<b>Gbanned:</b> {x_gbanned}"
-            out_str += f"\n\n<b>BlackListed:</b> No"
+            out_str += '\n\n<b>BlackListed:</b> No'
         await e.reply(out_str, file=x_full.profile_photo, parse_mode="html")
 
 
@@ -236,12 +231,11 @@ async def _(e):
     if not e.reply_to:
         return await e.reply("Reply to someone's message to set their bio!")
     reply_msg = await e.get_reply_message()
-    if reply_msg.sender:
-        if isinstance(reply_msg.sender, Channel):
-            return
-        user_id = reply_msg.sender_id
-    else:
+    if not reply_msg.sender:
         return
+    if isinstance(reply_msg.sender, Channel):
+        return
+    user_id = reply_msg.sender_id
     try:
         bio_words = e.text.split(None, 1)[1]
     except IndexError:
@@ -317,7 +311,7 @@ async def iban(event):
     url = "https://api-2445580194301.production.gw.apicast.io/2.0/finance/iban/validate.php?value={}&language=en&app_id=a70d671c&app_key=0631709ede8501d226cad08369d60b22"
     r = (get(url.format(iban))).json()
     result = r.get("result")
-    if not result == "valid":
+    if result != "valid":
         return await event.reply("Invalid iBAN.")
     out_str = "**IBAN:** `{iban}`"
     steps = r.get("steps")
@@ -372,7 +366,7 @@ async def _(event):
     response = get(url)
     info = response.json()
     valid = {info["status"]}
-    if not "success" in valid:
+    if "success" not in valid:
         return await event.reply("Invalid IPAddress!")
     output = f"""
 **IP Address:** `{info['query']}`
@@ -408,9 +402,8 @@ async def up(event):
     msg = await event.get_reply_message()
     if not msg.media:
         return
-    if msg.media.document:
-        if int(msg.media.document.size) > 500000:
-            return await event.reply("Failed, file size limit is 5MB.")
+    if msg.media.document and int(msg.media.document.size) > 500000:
+        return await event.reply("Failed, file size limit is 5MB.")
     res = await event.reply("Started download...")
     file_name = await tbot.download_media(msg)
     u = await res.edit(f"Success, Path: {file_name}")
@@ -487,20 +480,20 @@ async def cb(event):
         )
     elif event.reply_to:
         msg = await event.get_reply_message()
-        if msg.media:
-            if isinstance(msg.media, types.MessageMediaDocument):
-                file = await tbot.download_media(msg)
-                f = open(file)
-                code = f.read()
-                f.close()
-                os.remove(file)
-            else:
-                if msg.text:
-                    code = msg.raw_text
-                else:
-                    return
-        else:
+        if (
+            msg.media
+            and not isinstance(msg.media, types.MessageMediaDocument)
+            and msg.text
+            or not msg.media
+        ):
             code = msg.raw_text
+        elif not isinstance(msg.media, types.MessageMediaDocument):
+            return
+        else:
+            file = await tbot.download_media(msg)
+            with open(file) as f:
+                code = f.read()
+            os.remove(file)
     elif event.pattern_match.group(1):
         code = event.text.split(None, 1)[1]
     await event.reply("`Processing...`")
@@ -556,19 +549,17 @@ async def st(event):
 def dt():
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M")
-    dt_list = dt_string.split(" ")
-    return dt_list
+    return dt_string.split(" ")
 
 
 def dt_tom():
-    a = (
+    return (
         str(int(dt()[0].split("/")[0]) + 1)
         + "/"
         + dt()[0].split("/")[1]
         + "/"
         + dt()[0].split("/")[2]
     )
-    return a
 
 
 couple_selection_message = """Couple of the day:
@@ -607,7 +598,7 @@ async def couple(event):
             "u2_name": u2_name,
         }
         save_couple(chat_id, today, couple)
-    elif is_selected:
+    else:
         u1_id = int(is_selected["u1_id"])
         u2_id = int(is_selected["u2_id"])
         u1_name = is_selected["u1_name"]
@@ -647,9 +638,9 @@ async def up(event):
     cb_data = str(event_id) + "|" + str(count1) + "|" + str(count2)
     C1 = count1
     C2 = count2
-    if count1 == 0:
+    if C1 == 0:
         C1 = ""
-    if count2 == 0:
+    if C2 == 0:
         C2 = ""
     edited_buttons = Button.inline(
         f"👍{C1}", data="upco_{}".format(cb_data)
@@ -664,8 +655,7 @@ async def up(event):
     count1 = int(d[1])
     count2 = int(d[2])
     vote_up = voted_up(event_id, event.sender_id)
-    vote_down = voted_down(event_id, event.sender_id)
-    if vote_down:
+    if vote_down := voted_down(event_id, event.sender_id):
         await event.answer("you took your reaction back.")
         rm_vote_down(event_id, event.sender_id)
         count2 -= 1
@@ -682,9 +672,9 @@ async def up(event):
     cb_data = str(event_id) + "|" + str(count1) + "|" + str(count2)
     C1 = count1
     C2 = count2
-    if count1 == 0:
+    if C1 == 0:
         C1 = ""
-    if count2 == 0:
+    if C2 == 0:
         C2 = ""
     edited_buttons = Button.inline(
         f"👍{C1}", data="upco_{}".format(cb_data)
@@ -742,13 +732,12 @@ async def tr(event):
     if not event.reply_to_msg_id and event.pattern_match.group(1):
         text = event.text.split(None, 1)[1]
         total = text.split(" ", 1)
-        if len(total) == 2:
-            lang = total[0]
-            text = total[1]
-        else:
+        if len(total) != 2:
             return await event.reply(
                 "`/tr <LanguageCode>` as reply to a message or `/tr <LanguageCode> <text>`"
             )
+        lang = total[0]
+        text = total[1]
     elif event.reply_to_msg_id:
         text = (await event.get_reply_message()).text
         if event.pattern_match.group(1):
@@ -786,10 +775,7 @@ async def paste(e):
     elif e.reply_to:
         if len(e.text.split(" ", 1)) == 2:
             mode = e.text.split(" ", 1)[1]
-            if mode in ["h", "s", "p"]:
-                sp_bin = mode
-            else:
-                sp_bin = "h"
+            sp_bin = mode if mode in ["h", "s", "p"] else "h"
         else:
             sp_bin = "h"
         reply_msg = await e.get_reply_message()
@@ -798,26 +784,21 @@ async def paste(e):
         elif reply_msg.media:
             if not isinstance(reply_msg.media, MessageMediaDocument):
                 return await e.reply("Reply to a text document to paste it!")
-            else:
-                file = await tbot.download_media(reply_msg)
-                f = open(file, "rb")
+            file = await tbot.download_media(reply_msg)
+            with open(file, "rb") as f:
                 try:
                     paste_text = (f.read()).decode("utf-8")
                 except UnicodeDecodeError as ude:
                     return await e.reply(str(ude))
-                    os.remove("paste_file.txt")
-                f.close()
-                os.remove(file)
+            os.remove(file)
     elif e.pattern_match.group(1):
         paste_text = e.raw_text.split(None, 1)[1]
         sp_bin = "h"
     else:
         return
     paste_text = (paste_text.encode("utf-8")).decode("latin-1")
-    haste_bin = "https://hastebin.com/documents"
-    space_bin = "https://spaceb.in/api/v1/documents"
-    pasty_bin = "https://pasty.lus.pm/api/v1/pastes"
     if sp_bin == "h":
+        haste_bin = "https://hastebin.com/documents"
         try:
             r = post(haste_bin, data=paste_text, timeout=2)
         except Exception:
@@ -833,6 +814,7 @@ async def paste(e):
         else:
             sp_bin = "s"
     if sp_bin == "s":
+        space_bin = "https://spaceb.in/api/v1/documents"
         r = post(space_bin, data={"content": paste_text, "extension": "py"})
         if r.ok and r.status_code == (201 or 200):
             try:
@@ -845,6 +827,7 @@ async def paste(e):
         else:
             sp_bin = "p"
     if sp_bin == "p":
+        pasty_bin = "https://pasty.lus.pm/api/v1/pastes"
         r = post(
             pasty_bin,
             data=json.dumps({"content": paste_text}),
@@ -887,9 +870,8 @@ async def google_search(e):
     for x in results:
         link = (x.find("a", href=True))["href"]
         name = x.find("h3")
-        if link and name:
-            if not name == "Images" and not name == "Description":
-                final += f"\n- <a href='{link}'>{name}</a>"
+        if link and name and name not in ["Images", "Description"]:
+            final += f"\n- <a href='{link}'>{name}</a>"
     await e.reply(final, parse_mode="html", link_preview=False)
 
 
@@ -988,7 +970,7 @@ async def ocr_api_read__(e):
 @Cbot(pattern="^/img ?(.*)")
 async def image_search_bing(e):
     q = e.text.split(None, 1)
-    if not len(q) == 2:
+    if len(q) != 2:
         return
     q = q[1]
     search = bing_image_urls(q, limit=3)
@@ -1006,16 +988,18 @@ telegraph.create_account(short_name="neko")
 
 @Cbot(pattern="^/telegraph(@MissNeko_Bot)? ?(.*)")
 async def telegraph_upload___(e):
-    if not e.reply_to and not len(e.text.split(" ", 1)) == 2:
+    if not e.reply_to and len(e.text.split(" ", 1)) != 2:
         return await e.reply(
             "Reply to a message with correct arguments to get a permanent telegra.ph link."
         )
     if e.reply_to:
         r = await e.get_reply_message()
         if r.media and (r.photo or r.sticker):
-            if isinstance(r.media, MessageMediaDocument):
-                if r.media.document.size > 500000:
-                    return await e.reply("Max file size reached, limit is 5MB.")
+            if (
+                isinstance(r.media, MessageMediaDocument)
+                and r.media.document.size > 500000
+            ):
+                return await e.reply("Max file size reached, limit is 5MB.")
             xu = await e.reply("`Uploading....`")
             xp = await e.client.download_media(r)
             if xp.endswith("webp"):
@@ -1042,9 +1026,7 @@ async def telegraph_upload___(e):
                 fq = e.text.split(" ", 1)[1]
             except IndexError:
                 fq = xp or "n3ko"
-            fw = ""
-            for x in fp:
-                fw += x.decode() + "\n"
+            fw = "".join(x.decode() + "\n" for x in fp)
             fw = fw.replace("\n", "<br>")
             os.remove(xp)
             try:

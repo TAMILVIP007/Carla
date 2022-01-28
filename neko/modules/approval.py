@@ -204,12 +204,13 @@ async def _(event):
     user = int(user.strip())
     mode = mode.strip()
     name = name.strip()
-    if mode == "unapproveall":
-        if not await cb_is_owner(event, event.sender_id):
-            return
-    else:
-        if not await cb_can_change_info(event, event.sender_id):
-            return
+    if (
+        mode == "unapproveall"
+        and not await cb_is_owner(event, event.sender_id)
+        or mode != "unapproveall"
+        and not await cb_can_change_info(event, event.sender_id)
+    ):
+        return
     if mode == "disapprove":
         if await is_admin(event.chat_id, user):
             return await event.edit("This user is an admin, they can't be unapproved.")
