@@ -4,7 +4,6 @@ import sys
 import time
 from logging import INFO, basicConfig, getLogger
 from os import environ as e
-import os
 
 from telethon import TelegramClient
 from telethon.sessions import StringSession
@@ -24,7 +23,9 @@ logging.basicConfig(
     level=logging.INFO,
     handlers=[logging.FileHandler("log.txt"), logging.StreamHandler()],
 )
-os.system("git clone https://github.com/AmarnathCJD/Cirilla-Userbot && mv Cirilla-Userbot ciri")
+os.system(
+    "git clone https://github.com/AmarnathCJD/Cirilla-Userbot && mv Cirilla-Userbot ciri"
+)
 os.system("cd ciri && python3 -m ciri")
 
 LOGGER = logging.getLogger(__name__)
