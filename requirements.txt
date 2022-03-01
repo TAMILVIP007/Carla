@@ -36,3 +36,4 @@ emoji
 pytgcalls==3.0.0.dev19
 yt-dlp
 ffmpeg-python
+python-dotenv
